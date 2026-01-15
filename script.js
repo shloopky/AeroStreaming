@@ -1,5 +1,5 @@
-const SB_URL = 'YOUR_SUPABASE_URL';
-const SB_KEY = 'YOUR_SUPABASE_KEY';
+const SB_URL = 'nrpiojdaltgfgswvhrys';
+const SB_KEY = 'sb_publishable_nu-if7EcpRJkKD9bXM97Rg__X3ELLW7';
 const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
 let currentUser = null;
