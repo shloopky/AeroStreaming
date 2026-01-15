@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroStream - Pro WebRTC</title>
+    <title>AeroStream - Pro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,7 +11,7 @@
 
 <header>
     <div class="logo">AeroStream 🫧</div>
-    <div id="conn-status" style="font-size: 12px; color: #0078d7;">📡 Initializing...</div>
+    <div id="conn-status" style="font-size: 12px; color: #0078d7;">📡 Initializing Sync...</div>
     <div id="user-display">Connecting...</div>
 </header>
 
@@ -63,7 +63,7 @@
     let isSignUp = false;
     let localUsers = JSON.parse(localStorage.getItem('aero_users')) || { "Shloopky": "admin123" };
 
-    // --- 1. SIGNALING CHANNEL (WebRTC Handshake) ---
+    // --- 1. SIGNALING CHANNEL (Step B Logic) ---
     _supabase
         .channel('signaling')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signaling' }, async (payload) => {
@@ -71,24 +71,25 @@
             if (data.to_user !== currentUser) return;
 
             if (data.type === 'join-request' && currentUser === 'Shloopky') {
-                // Admin creates connection for new viewer
+                // Admin side: Create connection when someone joins
                 createPeerConnection(data.from_user);
             } else if (data.type === 'offer') {
-                // Viewer receives offer from Admin
+                // Client side: Receive offer
                 handleOffer(data.from_user, JSON.parse(data.message));
             } else if (data.type === 'answer') {
-                // Admin receives answer from Viewer
+                // Admin side: Finalize connection
                 const pc = peerConnections[data.from_user];
                 if (pc) await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data.message)));
             } else if (data.type === 'candidate') {
-                // Exchange network info
                 const pc = peerConnections[data.from_user];
                 if (pc) await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.message)));
             }
         })
-        .subscribe();
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') document.getElementById('conn-status').innerText = "🟢 Sync Active";
+        });
 
-    // --- 2. ADMIN STREAMING LOGIC ---
+    // --- 2. STREAMING ENGINE ---
     async function initiateGlobalStream() {
         try {
             localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
@@ -103,9 +104,8 @@
     async function createPeerConnection(viewerId) {
         const pc = new RTCPeerConnection(rtcConfig);
         peerConnections[viewerId] = pc;
-
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
+        
         pc.onicecandidate = (e) => {
             if (e.candidate) sendSignal(viewerId, 'candidate', JSON.stringify(e.candidate));
         };
@@ -115,21 +115,17 @@
         sendSignal(viewerId, 'offer', JSON.stringify(offer));
     }
 
-    // --- 3. VIEWER CONNECTION LOGIC ---
     async function handleOffer(adminId, offer) {
         const pc = new RTCPeerConnection(rtcConfig);
         peerConnections[adminId] = pc;
-
         pc.ontrack = (e) => {
             document.getElementById('global-player').srcObject = e.streams[0];
+            document.getElementById('status-text').innerText = "Watching Shloopky Live";
             document.getElementById('live-indicator').style.display = "block";
-            document.getElementById('status-text').innerText = "Watching Live Stream";
         };
-
         pc.onicecandidate = (e) => {
             if (e.candidate) sendSignal(adminId, 'candidate', JSON.stringify(e.candidate));
         };
-
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -140,15 +136,14 @@
         await _supabase.from('signaling').insert([{ from_user: currentUser, to_user: to, type: type, message: message }]);
     }
 
-    // --- 4. AUTH & CHAT LOGIC ---
+    // --- 3. AUTH & CHAT ---
     function handleAuth() {
         const u = document.getElementById('user-in').value.trim();
         const p = document.getElementById('pass-in').value;
         if (isSignUp) {
             localUsers[u] = p;
             localStorage.setItem('aero_users', JSON.stringify(localUsers));
-            alert("Signed up! Please login.");
-            toggleAuth();
+            alert("Account created!"); toggleAuth();
         } else {
             if (localUsers[u] === p) {
                 currentUser = u;
@@ -174,22 +169,22 @@
         input.value = "";
     }
 
-    function displayMessage(user, content, shouldSpeak = true) {
+    function displayMessage(user, content) {
         const box = document.getElementById('chat-messages');
         const msg = document.createElement('div');
         msg.className = "chat-msg";
         msg.innerHTML = `<b>${user}:</b> ${content}`;
         box.appendChild(msg);
         box.scrollTop = box.scrollHeight;
-        if(shouldSpeak && user !== currentUser) window.speechSynthesis.speak(new SpeechSynthesisUtterance(content));
     }
 
     async function loadOldMessages() {
-        const { data } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(50);
-        if (data) data.forEach(m => displayMessage(m.username, m.content, false));
+        const { data } = await _supabase.from('messages').select('*').order('created_at', { ascending: true });
+        if (data) data.forEach(m => displayMessage(m.username, m.content));
     }
 
     _supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => displayMessage(p.new.username, p.new.content)).subscribe();
+
 </script>
 </body>
 </html>
