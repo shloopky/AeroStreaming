@@ -7,48 +7,40 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Jumpscare Styling */
+        /* Jumpscare Overlay */
         #jumpscare-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             background: black;
             z-index: 9999;
-            justify-content: center;
-            align-items: center;
+            justify-content: center; align-items: center;
         }
-        #jumpscare-overlay img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
+        #jumpscare-overlay img { width: 100%; height: 100%; object-fit: contain; }
 
-        /* Bottom Code Display */
+        /* Animated Code Ticker */
         #bottom-code-bar {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.9);
             color: #00ff00;
             font-family: monospace;
-            font-size: 11px;
-            padding: 5px;
+            padding: 8px;
             white-space: nowrap;
             overflow: hidden;
-            border-top: 1px solid #333;
             z-index: 100;
         }
-
-        /* Chat Scroller */
-        #chat-messages {
-            height: 400px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 10px;
+        .ticker-text {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 20s linear infinite;
         }
+        @keyframes ticker {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        #chat-messages { height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
     </style>
 </head>
 <body>
@@ -71,7 +63,7 @@
             <div id="status-text">Ready to Sync</div>
             <div id="admin-tools" style="display: none; gap: 10px;">
                 <button id="start-btn" class="aero-btn" onclick="initiateGlobalStream()">Start Stream</button>
-                <button class="aero-btn" style="background: darkred; color: white;" onclick="triggerJumpscare()">FOXY ATTACK 🦊</button>
+                <button class="aero-btn" style="background: darkred;" onclick="triggerJumpscare()">FOXY ATTACK 🦊</button>
             </div>
             <div id="viewer-tools" style="display: none;">
                 <button class="aero-btn" style="background: #4a90e2;" onclick="refreshStreamConnection()">Refresh Video 🔄</button>
@@ -83,14 +75,16 @@
         <div class="chat-header">Global Chat</div>
         <div id="chat-messages"></div>
         <div class="chat-input-area">
-            <input type="text" id="chat-input" maxlength="100" placeholder="Max 100 chars..." onkeypress="if(event.key==='Enter') sendChat()">
+            <input type="text" id="chat-input" maxlength="100" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendChat()">
             <button class="aero-btn" onclick="sendChat()">Send</button>
         </div>
     </div>
 </div>
 
 <div id="bottom-code-bar">
-    _supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { displayMessage(p.new.username, p.new.content); }).subscribe();
+    <div class="ticker-text">
+        _supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { displayMessage(p.new.username, p.new.content); }).subscribe();
+    </div>
 </div>
 
 <div id="auth-overlay" class="overlay">
@@ -112,50 +106,47 @@
     let peerConnections = {}; 
     const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-    // --- SIGNALING & JUMPSCARE LISTENER ---
     _supabase.channel('signaling').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signaling' }, async (payload) => {
         const data = payload.new;
-
-        // Foxy Jumpscare Trigger
         if (data.type === 'jumpscare' && data.to_user === 'ALL' && currentUser !== 'Shloopky') {
             const overlay = document.getElementById('jumpscare-overlay');
             const audio = new Audio('https://www.myinstants.com/media/sounds/fnaf-foxy-jumpscare.mp3');
             overlay.style.display = 'flex';
-            audio.play();
+            audio.play().catch(() => {}); 
             setTimeout(() => { overlay.style.display = 'none'; }, 2500);
             return;
         }
-
         if (data.to_user !== currentUser) return;
 
-        // WebRTC Handshake Logic
-        if (data.type === 'join-request' && currentUser === 'Shloopky') {
-            createPeerConnection(data.from_user);
-        } else if (data.type === 'offer') {
-            handleOffer(data.from_user, JSON.parse(data.message));
-        } else if (data.type === 'answer') {
-            const pc = peerConnections[data.from_user];
-            if (pc) await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data.message)));
-        } else if (data.type === 'candidate') {
-            const pc = peerConnections[data.from_user];
-            if (pc) await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.message)));
-        }
+        try {
+            if (data.type === 'join-request' && currentUser === 'Shloopky') {
+                createPeerConnection(data.from_user);
+            } else if (data.type === 'offer') {
+                handleOffer(data.from_user, JSON.parse(data.message));
+            } else if (data.type === 'answer') {
+                const pc = peerConnections[data.from_user];
+                if (pc) await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(data.message)));
+            } else if (data.type === 'candidate') {
+                const pc = peerConnections[data.from_user];
+                if (pc) await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.message)));
+            }
+        } catch (e) {}
     }).subscribe();
 
     async function triggerJumpscare() {
-        if (currentUser !== 'Shloopky') return;
         await _supabase.from('signaling').insert([{ from_user: currentUser, to_user: 'ALL', type: 'jumpscare', message: '{}' }]);
     }
 
-    // --- STREAMING FUNCTIONS ---
     async function initiateGlobalStream() {
         localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         document.getElementById('global-player').srcObject = localStream;
         document.getElementById('live-indicator').style.display = "block";
+        document.getElementById('status-text').innerText = "Streaming Active";
         document.getElementById('start-btn').style.display = "none";
     }
 
     async function createPeerConnection(viewerId) {
+        if (!localStream) return;
         const pc = new RTCPeerConnection(rtcConfig);
         peerConnections[viewerId] = pc;
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
@@ -166,10 +157,15 @@
     }
 
     async function handleOffer(adminId, offer) {
-        if (peerConnections[adminId]) peerConnections[adminId].close();
         const pc = new RTCPeerConnection(rtcConfig);
         peerConnections[adminId] = pc;
-        pc.ontrack = (e) => { document.getElementById('global-player').srcObject = e.streams[0]; };
+        pc.ontrack = (e) => { 
+            const vid = document.getElementById('global-player');
+            vid.srcObject = e.streams[0];
+            vid.play();
+            document.getElementById('live-indicator').style.display = "block";
+            document.getElementById('status-text').innerText = "Watching Shloopky Live";
+        };
         pc.onicecandidate = (e) => { if (e.candidate) sendSignal(adminId, 'candidate', JSON.stringify(e.candidate)); };
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pc.createAnswer();
@@ -181,7 +177,6 @@
         await _supabase.from('signaling').insert([{ from_user: currentUser, to_user: to, type: type, message: message }]);
     }
 
-    // --- AUTH & CHAT ---
     function handleAuth() {
         const u = document.getElementById('user-in').value.trim();
         currentUser = u || "Guest";
@@ -214,8 +209,8 @@
     _supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
         displayMessage(p.new.username, p.new.content);
     }).subscribe();
+
+    function refreshStreamConnection() { sendSignal('Shloopky', 'join-request', '{}'); }
 </script>
-</body>
-</html>
 </body>
 </html>
