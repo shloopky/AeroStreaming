@@ -11,16 +11,31 @@
 
     <div id="auth-overlay" class="overlay">
         <div class="auth-card glass-panel">
-            <h2 style="color: #0078d7; text-align: center; margin-bottom: 20px;">AeroSocial</h2>
+            <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
             <div id="auth-form">
                 <input type="email" id="email-in" placeholder="Email">
                 <input type="password" id="pass-in" placeholder="Password">
                 <div id="signup-fields">
                     <input type="text" id="username-in" placeholder="Display Name">
-                    <input type="text" id="bio-in" placeholder="Your Bio">
                 </div>
                 <button class="aero-btn" id="auth-main-btn" onclick="handleAuth()">Sign Up</button>
                 <p id="auth-toggle" onclick="toggleAuthMode()">Already have an account? Login</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="overlay" style="display: none;">
+        <div class="glass-panel" style="width: 400px; text-align: center;">
+            <h3>Edit Profile</h3>
+            <div id="drop-zone" class="drop-zone">
+                <p>Drag & Drop Photo<br>or Click to Browse</p>
+                <input type="file" id="file-input" hidden accept="image/*">
+                <img id="preview-img" style="display:none; width:80px; height:80px; border-radius:50%; margin: 10px auto;">
+            </div>
+            <input type="text" id="edit-username" placeholder="Username" class="input-box" style="margin: 15px 0;">
+            <div style="display: flex; gap: 10px;">
+                <button class="aero-btn" onclick="saveProfile()">Save Changes</button>
+                <button class="aero-btn" style="background: #e74c3c;" onclick="closeProfile()">Cancel</button>
             </div>
         </div>
     </div>
@@ -38,8 +53,8 @@
             <div id="sidebar-header">Direct Messages</div>
             <div id="sidebar-content"></div>
             
-            <div class="user-bar" onclick="openProfileSettings()">
-                <img id="my-pfp" src="https://via.placeholder.com/32" class="pfp-img">
+            <div class="user-bar" onclick="openProfile()">
+                <img id="my-pfp" src="" class="pfp-img">
                 <div class="user-info">
                     <span id="my-name">Loading...</span>
                     <span id="my-status">Online</span>
@@ -50,7 +65,7 @@
         <main class="chat-window">
             <div id="chat-messages"></div>
             <div class="input-area">
-                <input type="text" id="chat-in" class="input-box" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <input type="text" id="chat-in" class="input-box" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()" autocomplete="off">
             </div>
         </main>
     </div>
