@@ -1,75 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroSocial</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
+const SB_URL = 'https://nrpiojdaltgfgswvhrys.supabase.co'; 
+const SB_KEY = 'sb_publishable_nu-if7EcpRJkKD9bXM97Rg__X3ELLW7';
+const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-    <div id="auth-overlay" class="overlay">
-        <div class="auth-card glass-panel">
-            <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
-            <div id="auth-form">
-                <input type="email" id="email-in" placeholder="Email">
-                <input type="password" id="pass-in" placeholder="Password">
-                <div id="signup-fields">
-                    <input type="text" id="username-in" placeholder="Display Name">
-                </div>
-                <button class="aero-btn" id="auth-main-btn" onclick="handleAuth()">Sign Up</button>
-                <p id="auth-toggle" onclick="toggleAuthMode()">Already have an account? Login</p>
-            </div>
+let currentUser = null;
+let isLoginMode = false;
+let selectedFile = null;
+
+// --- VIEW CONTROLLER ---
+function setView(view) {
+    const content = document.getElementById('sidebar-content');
+    const header = document.getElementById('sidebar-header');
+    content.innerHTML = ''; // Clear current list
+    
+    document.querySelectorAll('.server-icon').forEach(el => el.classList.remove('active'));
+
+    if (view === 'dm') {
+        document.getElementById('nav-dm').classList.add('active');
+        header.innerText = "Direct Messages";
+        loadFriendsList(); 
+    } else if (view === 'friends') {
+        document.getElementById('nav-friends').classList.add('active');
+        header.innerText = "Friends Management";
+        renderFriendsUI(); 
+    }
+}
+
+// --- PROFILE LOGIC ---
+function openProfile() {
+    document.getElementById('profile-modal').style.display = 'flex';
+    document.getElementById('edit-username').value = document.getElementById('my-name').innerText;
+}
+
+function closeProfile() {
+    document.getElementById('profile-modal').style.display = 'none';
+    selectedFile = null;
+}
+
+// Drag & Drop Setup
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+if(dropZone) {
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files[0]);
+    };
+    fileInput.onchange = (e) => handleFiles(e.target.files[0]);
+}
+
+function handleFiles(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('preview-img').src = e.target.result;
+        document.getElementById('preview-img').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+async function saveProfile() {
+    let pfpUrl = document.getElementById('my-pfp').src;
+    const newUsername = document.getElementById('edit-username').value;
+
+    if (selectedFile) {
+        const fileName = `${currentUser.id}_avatar.png`;
+        const { error } = await _supabase.storage.from('avatars').upload(fileName, selectedFile, { upsert: true });
+        if (error) return alert("Upload failed: " + error.message);
+        const { data: publicUrl } = _supabase.storage.from('avatars').getPublicUrl(fileName);
+        pfpUrl = publicUrl.publicUrl;
+    }
+
+    await _supabase.from('profiles').upsert({ id: currentUser.id, username: newUsername, pfp: pfpUrl });
+    location.reload(); 
+}
+
+// --- FRIENDS LOGIC ---
+function renderFriendsUI() {
+    const content = document.getElementById('sidebar-content');
+    content.innerHTML = `
+        <div style="padding: 15px;">
+            <input type="text" id="friend-search" placeholder="Username..." class="input-box" style="margin-bottom:10px; background:white;">
+            <button class="aero-btn" onclick="sendFriendRequest()">Send Request</button>
         </div>
-    </div>
-
-    <div id="profile-modal" class="overlay" style="display: none;">
-        <div class="glass-panel" style="width: 400px; text-align: center;">
-            <h3>Edit Profile</h3>
-            <div id="drop-zone" class="drop-zone">
-                <p>Drag & Drop Photo<br>or Click to Browse</p>
-                <input type="file" id="file-input" hidden accept="image/*">
-                <img id="preview-img" style="display:none; width:80px; height:80px; border-radius:50%; margin: 10px auto;">
-            </div>
-            <input type="text" id="edit-username" placeholder="Username" class="input-box" style="margin: 15px 0;">
-            <div style="display: flex; gap: 10px;">
-                <button class="aero-btn" onclick="saveProfile()">Save Changes</button>
-                <button class="aero-btn" style="background: #e74c3c;" onclick="closeProfile()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="app-container">
-        <nav class="server-rail">
-            <div class="server-icon active" id="nav-dm" onclick="setView('dm')">✉️</div>
-            <div class="server-icon" id="nav-friends" onclick="setView('friends')">👥</div>
-            <hr style="width:30px; opacity:0.2; margin: 10px 0;">
-            <div id="server-list"></div>
-            <div class="server-icon add-btn" style="color: #2ecc71;">+</div>
-        </nav>
-
-        <aside class="sub-sidebar">
-            <div id="sidebar-header">Direct Messages</div>
-            <div id="sidebar-content"></div>
-            
-            <div class="user-bar" onclick="openProfile()">
-                <img id="my-pfp" src="" class="pfp-img">
-                <div class="user-info">
-                    <span id="my-name">Loading...</span>
-                    <span id="my-status">Online</span>
-                </div>
-            </div>
-        </aside>
-
-        <main class="chat-window">
-            <div id="chat-messages"></div>
-            <div class="input-area">
-                <input type="text" id="chat-in" class="input-box" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()" autocomplete="off">
-            </div>
-        </main>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+        <div class="section-label">Pending Requests</div>
+        <div id="pending
