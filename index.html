@@ -19,7 +19,6 @@
             z-index: 10000;
         }
 
-        /* GLITCH JUMPSCARE STYLING */
         #jumpscare-overlay {
             display: none;
             position: fixed;
@@ -46,7 +45,6 @@
             opacity: 0.8;
         }
 
-        /* Sleek Chat Bubbles */
         #chat-messages { 
             height: 400px; 
             overflow-y: auto; 
@@ -127,7 +125,6 @@
     let peerConnections = {}; 
     const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-    // --- MATRIX GLITCH EFFECT ---
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
     let matrixInterval;
@@ -153,17 +150,21 @@
         }, 33);
     }
 
-    // --- WebRTC SIGNALING ---
     _supabase.channel('signaling').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signaling' }, async (payload) => {
         const data = payload.new;
         if (data.type === 'jumpscare' && data.to_user === 'ALL' && currentUser !== 'Shloopky') {
             runGlitchJumpscare(); return;
         }
+        
+        // Only process messages meant for me
         if (data.to_user !== currentUser) return;
 
         try {
             if (data.type === 'join-request' && currentUser === 'Shloopky') {
-                createPeerConnection(data.from_user);
+                // Shloopky receives a join request and starts the connection
+                if (localStream) {
+                    createPeerConnection(data.from_user);
+                }
             } else if (data.type === 'offer') {
                 handleOffer(data.from_user, JSON.parse(data.message));
             } else if (data.type === 'answer') {
@@ -179,11 +180,9 @@
     function runGlitchJumpscare() {
         const overlay = document.getElementById('jumpscare-overlay');
         const audio = new Audio('https://www.myinstants.com/media/sounds/fnaf-foxy-jumpscare.mp3');
-        
         overlay.style.display = 'flex';
         startMatrixEffect();
         audio.play().catch(() => {}); 
-        
         setTimeout(() => { 
             overlay.style.display = 'none'; 
             clearInterval(matrixInterval);
@@ -195,7 +194,6 @@
         await _supabase.from('signaling').insert([{ from_user: currentUser, to_user: 'ALL', type: 'jumpscare', message: '{}' }]);
     }
 
-    // --- STREAMING FUNCTIONS ---
     async function initiateGlobalStream() {
         try {
             localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
@@ -207,11 +205,14 @@
     }
 
     async function createPeerConnection(viewerId) {
-        if (!localStream) return;
         const pc = new RTCPeerConnection(rtcConfig);
         peerConnections[viewerId] = pc;
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-        pc.onicecandidate = (e) => { if (e.candidate) sendSignal(viewerId, 'candidate', JSON.stringify(e.candidate)); };
+        
+        pc.onicecandidate = (e) => { 
+            if (e.candidate) sendSignal(viewerId, 'candidate', JSON.stringify(e.candidate)); 
+        };
+
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal(viewerId, 'offer', JSON.stringify(offer));
@@ -227,7 +228,9 @@
             document.getElementById('live-indicator').style.display = "block";
             document.getElementById('status-text').innerText = "Connected to Shloopky";
         };
-        pc.onicecandidate = (e) => { if (e.candidate) sendSignal(adminId, 'candidate', JSON.stringify(e.candidate)); };
+        pc.onicecandidate = (e) => { 
+            if (e.candidate) sendSignal(adminId, 'candidate', JSON.stringify(e.candidate)); 
+        };
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -244,10 +247,12 @@
         currentUser = u;
         document.getElementById('auth-overlay').style.display = "none";
         document.getElementById('user-display').innerHTML = `User: <b>${currentUser}</b>`;
+        
         if (currentUser === "Shloopky") {
             document.getElementById('admin-tools').style.display = "flex";
         } else {
             document.getElementById('viewer-tools').style.display = "block";
+            // Automatically ask Shloopky to connect
             sendSignal('Shloopky', 'join-request', '{}');
         }
     }
