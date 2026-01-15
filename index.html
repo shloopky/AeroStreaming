@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AeroStream - Global</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroStream - Live</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
@@ -18,7 +20,7 @@
         <video id="global-player" autoplay playsinline></video>
         
         <div class="stream-info">
-            <div id="status-text">Waiting for Shloopky to broadcast...</div>
+            <div id="status-text">Waiting for host to go live...</div>
             <div id="admin-tools" style="display: none;">
                 <button id="start-btn" class="aero-btn" onclick="initiateGlobalStream()">Start Stream</button>
                 <button id="stop-btn" class="aero-btn" onclick="stopGlobalStream()" style="display:none; background: #ff4d4d;">End Broadcast</button>
@@ -44,21 +46,30 @@
             <input type="password" id="pass-in" placeholder="Password">
         </div>
         <button class="aero-btn" id="submit-btn" onclick="handleAuth()">Login</button>
-        <p onclick="toggleAuth()" id="toggle-text">Don't have an account? <span>Sign Up</span></p>
+        <p onclick="toggleAuth()" id="toggle-text" style="cursor:pointer; margin-top:15px; font-size: 14px;">
+            Don't have an account? <span style="color:#0078d7; text-decoration:underline;">Sign Up</span>
+        </p>
     </div>
 </div>
 
 <script>
+    // UNIQUE ID: This is what connects you to your viewers.
+    const STREAM_ID = 'shloopky-live-broadcaster'; 
+    const peer = new Peer(STREAM_ID);
+
     let isSignUp = false;
     let currentUser = null;
     let localStream = null;
     let users = JSON.parse(localStorage.getItem('users')) || {};
 
+    // --- AUTH LOGIC ---
     function toggleAuth() {
         isSignUp = !isSignUp;
         document.getElementById('auth-title').innerText = isSignUp ? "Create Account" : "Welcome to Aero";
         document.getElementById('submit-btn').innerText = isSignUp ? "Sign Up" : "Login";
-        document.getElementById('toggle-text').innerHTML = isSignUp ? "Already have an account? <span>Login</span>" : "Don't have an account? <span>Sign Up</span>";
+        document.getElementById('toggle-text').innerHTML = isSignUp ? 
+            "Already have an account? <span style='color:#0078d7;'>Login</span>" : 
+            "Don't have an account? <span style='color:#0078d7;'>Sign Up</span>";
     }
 
     function handleAuth() {
@@ -73,49 +84,93 @@
             alert("Account created! Please log in.");
             toggleAuth();
         } else {
-            // LOGIN LOGIC
+            // LOGIN LOGIC: Admin is Shloopky / admin123
             if ((u === "Shloopky" && p === "admin123") || users[u] === p) {
                 currentUser = u;
                 document.getElementById('auth-overlay').style.display = "none";
-                document.getElementById('user-display').innerHTML = `User: <b>${currentUser}</b>`;
+                document.getElementById('user-display').innerHTML = `Logged in as: <b>${currentUser}</b>`;
                 
+                // If it's you, show the streaming buttons
                 if (currentUser === "Shloopky") {
                     document.getElementById('admin-tools').style.display = "block";
-                    document.getElementById('status-text').innerText = "Admin Authorized";
+                    document.getElementById('status-text').innerText = "Broadcaster Mode Active";
+                } else {
+                    connectToStream(); // If it's a viewer, try to find the stream
                 }
             } else {
-                alert("Invalid credentials.");
+                alert("Invalid username or password.");
             }
         }
     }
 
+    // --- STREAMING LOGIC (For Shloopky) ---
     async function initiateGlobalStream() {
         try {
-            localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+            localStream = await navigator.mediaDevices.getDisplayMedia({ 
+                video: { cursor: "always" }, 
+                audio: true 
+            });
+            
             document.getElementById('global-player').srcObject = localStream;
             document.getElementById('live-indicator').style.display = "block";
             document.getElementById('start-btn').style.display = "none";
             document.getElementById('stop-btn').style.display = "inline-block";
-            document.getElementById('status-text').innerText = "BROADCASTING TO NETWORK";
-        } catch(e) { console.error("Stream failed"); }
+            document.getElementById('status-text').innerText = "LIVE AND BROADCASTING";
+
+            // When a viewer joins, this automatically sends them your video
+            peer.on('call', (call) => {
+                call.answer(localStream);
+            });
+
+        } catch(e) {
+            console.error(e);
+            alert("Could not start screen share.");
+        }
     }
 
     function stopGlobalStream() {
-        localStream.getTracks().forEach(t => t.stop());
-        document.getElementById('global-player').srcObject = null;
-        document.getElementById('live-indicator').style.display = "none";
-        document.getElementById('start-btn').style.display = "inline-block";
-        document.getElementById('stop-btn').style.display = "none";
-        document.getElementById('status-text').innerText = "Stream Ended";
+        if(localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            document.getElementById('global-player').srcObject = null;
+            document.getElementById('live-indicator').style.display = "none";
+            document.getElementById('start-btn').style.display = "inline-block";
+            document.getElementById('stop-btn').style.display = "none";
+            document.getElementById('status-text').innerText = "Broadcast Ended";
+        }
     }
 
+    // --- VIEWING LOGIC (For others) ---
+    function connectToStream() {
+        document.getElementById('status-text').innerText = "Searching for Shloopky's stream...";
+        
+        // Viewers "call" the hardcoded Stream ID
+        const call = peer.call(STREAM_ID, null); 
+        
+        call.on('stream', (remoteStream) => {
+            document.getElementById('global-player').srcObject = remoteStream;
+            document.getElementById('live-indicator').style.display = "block";
+            document.getElementById('status-text').innerText = "Streaming Live Content";
+        });
+
+        call.on('error', (err) => {
+            document.getElementById('status-text').innerText = "Stream is currently offline.";
+        });
+    }
+
+    // --- CHAT LOGIC ---
     function sendChat() {
         const input = document.getElementById('chat-input');
         if (!input.value) return;
+        
         const msg = document.createElement('div');
         msg.className = "chat-msg";
         msg.innerHTML = `<b>${currentUser}:</b> ${input.value}`;
         document.getElementById('chat-messages').appendChild(msg);
+        
+        // Local TTS
+        const speech = new SpeechSynthesisUtterance(input.value);
+        window.speechSynthesis.speak(speech);
+
         input.value = "";
         const box = document.getElementById('chat-messages');
         box.scrollTop = box.scrollHeight;
