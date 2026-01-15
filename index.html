@@ -3,10 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroStream - Foxy Edition</title>
+    <title>AeroStream - Sleek Pro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* FULL PAGE OVERLAY - Back to original style */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(187, 222, 251, 0.7); /* Light blue tint */
+            backdrop-filter: blur(20px); /* Deep blur */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .auth-card {
+            width: 350px;
+            padding: 40px;
+            text-align: center;
+        }
+
         /* Jumpscare Overlay */
         #jumpscare-overlay {
             display: none;
@@ -18,21 +37,44 @@
         }
         #jumpscare-overlay img { width: 100%; height: 100%; object-fit: contain; }
 
-        /* Chat Layout */
+        /* Sleek Chat Bubbles */
         #chat-messages { 
             height: 400px; 
             overflow-y: auto; 
             display: flex; 
             flex-direction: column; 
-            gap: 8px; 
-            padding: 10px; 
+            gap: 12px; 
+            padding: 20px; 
         }
 
-        /* Ensure the main layout fills the space since bar is gone */
-        body { margin-bottom: 0; padding-bottom: 0; }
+        .chat-msg {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            max-width: 85%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            font-size: 14px;
+            color: #333;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
+
+<div id="auth-overlay" class="overlay">
+    <div class="auth-card glass-panel">
+        <h2 id="auth-title" style="color: #0078d7; margin-bottom: 20px;">Welcome to Aero</h2>
+        <input type="text" id="user-in" placeholder="Username" style="width: 80%; margin-bottom: 15px;">
+        <input type="password" id="pass-in" placeholder="Password" style="width: 80%; margin-bottom: 20px;">
+        <button class="aero-btn" onclick="handleAuth()" style="width: 90%;">Enter Stream</button>
+    </div>
+</div>
 
 <div id="jumpscare-overlay">
     <img src="https://media.giphy.com/media/107lYCYebCwWDC/giphy.gif" alt="FOXY">
@@ -50,11 +92,11 @@
         <video id="global-player" autoplay playsinline muted></video>
         <div class="stream-info">
             <div id="status-text">Ready to Sync</div>
-            <div id="admin-tools" style="display: none; gap: 10px;">
+            <div id="admin-tools" style="display: none; gap: 10px; margin-top: 10px;">
                 <button id="start-btn" class="aero-btn" onclick="initiateGlobalStream()">Start Stream</button>
-                <button class="aero-btn" style="background: darkred;" onclick="triggerJumpscare()">FOXY ATTACK 🦊</button>
+                <button class="aero-btn" style="background: #d32f2f;" onclick="triggerJumpscare()">FOXY ATTACK 🦊</button>
             </div>
-            <div id="viewer-tools" style="display: none;">
+            <div id="viewer-tools" style="display: none; margin-top: 10px;">
                 <button class="aero-btn" style="background: #4a90e2;" onclick="refreshStreamConnection()">Refresh Video 🔄</button>
             </div>
         </div>
@@ -63,20 +105,10 @@
     <div class="chat-sidebar glass-panel">
         <div class="chat-header">Global Chat</div>
         <div id="chat-messages"></div>
-   <div class="chat-input-area">
-    <input type="text" id="chat-input" maxlength="100" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendChat()">
-    <button class="aero-btn" onclick="sendChat()">Send</button>
-</div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" maxlength="100" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendChat()">
+            <button class="aero-btn" onclick="sendChat()">Send</button>
         </div>
-    </div>
-</div>
-
-<div id="auth-overlay" class="overlay">
-    <div class="auth-card glass-panel">
-        <h2 id="auth-title">Welcome to Aero</h2>
-        <input type="text" id="user-in" placeholder="Username">
-        <input type="password" id="pass-in" placeholder="Password">
-        <button class="aero-btn" onclick="handleAuth()">Login</button>
     </div>
 </div>
 
@@ -188,11 +220,12 @@
 
     function displayMessage(user, content) {
         const box = document.getElementById('chat-messages');
+        const isAtBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 50;
         const msg = document.createElement('div');
         msg.className = "chat-msg";
         msg.innerHTML = `<b>${user}:</b> ${content}`;
         box.appendChild(msg);
-        box.scrollTop = box.scrollHeight;
+        if (isAtBottom) box.scrollTop = box.scrollHeight;
     }
 
     _supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
