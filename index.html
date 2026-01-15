@@ -3,39 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroStream - Sleek Pro</title>
+    <title>AeroStream - Glitch Edition</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* FULL PAGE OVERLAY - Back to original style */
         .overlay {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(187, 222, 251, 0.7); /* Light blue tint */
-            backdrop-filter: blur(20px); /* Deep blur */
+            background: rgba(187, 222, 251, 0.7);
+            backdrop-filter: blur(20px);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 10000;
         }
 
-        .auth-card {
-            width: 350px;
-            padding: 40px;
-            text-align: center;
-        }
-
-        /* Jumpscare Overlay */
+        /* GLITCH JUMPSCARE STYLING */
         #jumpscare-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             background: black;
             z-index: 9999;
+            overflow: hidden;
             justify-content: center; align-items: center;
         }
-        #jumpscare-overlay img { width: 100%; height: 100%; object-fit: contain; }
+
+        #jumpscare-overlay img { 
+            position: absolute;
+            width: 80%; height: 80%; 
+            object-fit: contain; 
+            z-index: 2;
+            filter: contrast(150%) brightness(1.2);
+        }
+
+        #matrix-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 3;
+            opacity: 0.8;
+        }
 
         /* Sleek Chat Bubbles */
         #chat-messages { 
@@ -56,12 +65,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             font-size: 14px;
             color: #333;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -69,20 +72,20 @@
 
 <div id="auth-overlay" class="overlay">
     <div class="auth-card glass-panel">
-        <h2 id="auth-title" style="color: #0078d7; margin-bottom: 20px;">Welcome to Aero</h2>
-        <input type="text" id="user-in" placeholder="Username" style="width: 80%; margin-bottom: 15px;">
-        <input type="password" id="pass-in" placeholder="Password" style="width: 80%; margin-bottom: 20px;">
-        <button class="aero-btn" onclick="handleAuth()" style="width: 90%;">Enter Stream</button>
+        <h2 style="color: #0078d7; margin-bottom: 20px;">Aero Login</h2>
+        <input type="text" id="user-in" placeholder="Enter Username" style="width: 85%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 20px;">
+        <button class="aero-btn" onclick="handleAuth()" style="width: 95%;">Join Stream</button>
     </div>
 </div>
 
 <div id="jumpscare-overlay">
+    <canvas id="matrix-canvas"></canvas>
     <img src="https://media.giphy.com/media/107lYCYebCwWDC/giphy.gif" alt="FOXY">
 </div>
 
 <header>
     <div class="logo">AeroStream 🫧</div>
-    <div id="conn-status" style="font-size: 12px; color: #0078d7;">📡 Syncing...</div>
+    <div id="conn-status" style="font-size: 12px; color: #0078d7;">🟢 Online</div>
     <div id="user-display">Connecting...</div>
 </header>
 
@@ -91,13 +94,15 @@
         <div id="live-indicator" style="display:none;">● LIVE</div>
         <video id="global-player" autoplay playsinline muted></video>
         <div class="stream-info">
-            <div id="status-text">Ready to Sync</div>
+            <div id="status-text">Waiting for Shloopky...</div>
+            
             <div id="admin-tools" style="display: none; gap: 10px; margin-top: 10px;">
                 <button id="start-btn" class="aero-btn" onclick="initiateGlobalStream()">Start Stream</button>
-                <button class="aero-btn" style="background: #d32f2f;" onclick="triggerJumpscare()">FOXY ATTACK 🦊</button>
+                <button class="aero-btn" style="background: #00ff41; color: black; font-weight: bold;" onclick="triggerJumpscare()">GLITCH JUMPSCARE 👾</button>
             </div>
+
             <div id="viewer-tools" style="display: none; margin-top: 10px;">
-                <button class="aero-btn" style="background: #4a90e2;" onclick="refreshStreamConnection()">Refresh Video 🔄</button>
+                <button class="aero-btn" style="background: #4a90e2;" onclick="forceClientReconnect()">Fix My Stream 🔄</button>
             </div>
         </div>
     </div>
@@ -122,11 +127,37 @@
     let peerConnections = {}; 
     const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
+    // --- MATRIX GLITCH EFFECT ---
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    let matrixInterval;
+
+    function startMatrixEffect() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const columns = canvas.width / 20;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        matrixInterval = setInterval(() => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = '20px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = Math.floor(Math.random() * 2);
+                ctx.fillText(text, i * 20, drops[i] * 20);
+                if (drops[i] * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }, 33);
+    }
+
     // --- WebRTC SIGNALING ---
     _supabase.channel('signaling').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signaling' }, async (payload) => {
         const data = payload.new;
         if (data.type === 'jumpscare' && data.to_user === 'ALL' && currentUser !== 'Shloopky') {
-            doJumpscare(); return;
+            runGlitchJumpscare(); return;
         }
         if (data.to_user !== currentUser) return;
 
@@ -142,21 +173,29 @@
                 const pc = peerConnections[data.from_user];
                 if (pc) await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(data.message)));
             }
-        } catch (e) {}
+        } catch (e) { console.error("Signaling error:", e); }
     }).subscribe();
 
-    function doJumpscare() {
+    function runGlitchJumpscare() {
         const overlay = document.getElementById('jumpscare-overlay');
         const audio = new Audio('https://www.myinstants.com/media/sounds/fnaf-foxy-jumpscare.mp3');
+        
         overlay.style.display = 'flex';
+        startMatrixEffect();
         audio.play().catch(() => {}); 
-        setTimeout(() => { overlay.style.display = 'none'; }, 2500);
+        
+        setTimeout(() => { 
+            overlay.style.display = 'none'; 
+            clearInterval(matrixInterval);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 3500);
     }
 
     async function triggerJumpscare() {
         await _supabase.from('signaling').insert([{ from_user: currentUser, to_user: 'ALL', type: 'jumpscare', message: '{}' }]);
     }
 
+    // --- STREAMING FUNCTIONS ---
     async function initiateGlobalStream() {
         try {
             localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
@@ -164,7 +203,7 @@
             document.getElementById('live-indicator').style.display = "block";
             document.getElementById('status-text').innerText = "Streaming Active";
             document.getElementById('start-btn').style.display = "none";
-        } catch (e) { alert("Permission denied!"); }
+        } catch (e) { alert("Enable Screen Recording!"); }
     }
 
     async function createPeerConnection(viewerId) {
@@ -186,7 +225,7 @@
             vid.srcObject = e.streams[0];
             vid.play();
             document.getElementById('live-indicator').style.display = "block";
-            document.getElementById('status-text').innerText = "Watching Shloopky Live";
+            document.getElementById('status-text').innerText = "Connected to Shloopky";
         };
         pc.onicecandidate = (e) => { if (e.candidate) sendSignal(adminId, 'candidate', JSON.stringify(e.candidate)); };
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
@@ -201,14 +240,22 @@
 
     function handleAuth() {
         const u = document.getElementById('user-in').value.trim();
-        currentUser = u || "Guest";
+        if(!u) return alert("Enter a name!");
+        currentUser = u;
         document.getElementById('auth-overlay').style.display = "none";
         document.getElementById('user-display').innerHTML = `User: <b>${currentUser}</b>`;
-        if (currentUser === "Shloopky") document.getElementById('admin-tools').style.display = "flex";
-        else {
+        if (currentUser === "Shloopky") {
+            document.getElementById('admin-tools').style.display = "flex";
+        } else {
             document.getElementById('viewer-tools').style.display = "block";
             sendSignal('Shloopky', 'join-request', '{}');
         }
+    }
+
+    function forceClientReconnect() {
+        for (let id in peerConnections) { peerConnections[id].close(); delete peerConnections[id]; }
+        document.getElementById('global-player').srcObject = null;
+        sendSignal('Shloopky', 'join-request', '{}');
     }
 
     async function sendChat() {
@@ -231,8 +278,6 @@
     _supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
         displayMessage(p.new.username, p.new.content);
     }).subscribe();
-
-    function refreshStreamConnection() { sendSignal('Shloopky', 'join-request', '{}'); }
 </script>
 </body>
 </html>
