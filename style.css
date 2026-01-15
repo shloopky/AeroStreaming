@@ -21,20 +21,11 @@ body, html { margin: 0; padding: 0; height: 100vh; background: linear-gradient(1
 .user-bar { padding: 12px; background: rgba(255,255,255,0.4); display: flex; align-items: center; gap: 10px; cursor: pointer; border-top: 1px solid var(--border); }
 .pfp-img { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; background: #eee; }
 
-/* Drag and Drop Zone */
-.drop-zone {
-    border: 2px dashed var(--accent);
-    border-radius: 15px;
-    padding: 20px;
-    cursor: pointer;
-    background: rgba(255,255,255,0.2);
-    color: var(--accent);
-    font-weight: bold;
-}
-.drop-zone:hover, .drop-zone.dragover {
-    background: rgba(0, 120, 215, 0.1);
-}
+.drop-zone { border: 2px dashed var(--accent); border-radius: 15px; padding: 20px; cursor: pointer; background: rgba(255,255,255,0.2); color: var(--accent); font-weight: bold; }
+.drop-zone.dragover { background: rgba(0, 120, 215, 0.1); }
 
 .aero-btn { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-.input-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); outline: none; background: white; }
+.input-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); outline: none; }
 #auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
+.section-label { font-size: 10px; font-weight: bold; opacity: 0.5; padding: 10px 20px; text-transform: uppercase; }
+.friend-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; }
