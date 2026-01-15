@@ -119,14 +119,43 @@ body, html {
 }
 
 /* USER BAR BOTTOM */
+/* Better User Bar */
 .user-bar {
-    padding: 10px;
-    background: rgba(0,0,0,0.03);
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    border-top: 1px solid var(--border);
 }
 
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+#my-name { font-weight: 600; font-size: 14px; color: #333; }
+#my-status { font-size: 11px; color: #2ecc71; }
+
+/* Modern Message Bubbles */
+.message-bubble {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 8px;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.message-bubble:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.message-bubble img {
+    border-radius: 12px; /* Squirrel-style rounded corners */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
 .pfp-img {
     width: 32px; height: 32px;
     border-radius: 8px;
