@@ -2,160 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AeroSocial - Friends & Servers</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSocial</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div id="auth-overlay" class="overlay" style="display: flex; position: fixed; width: 100%; height: 100%; z-index: 10000; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); justify-content: center; align-items: center;">
-    <div class="auth-card glass-panel" style="padding: 40px; border-radius: 24px; background: white; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-        <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
-        <div id="auth-form">
-            <input type="email" id="email-in" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
-            <input type="password" id="pass-in" placeholder="Password" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
-            <div id="signup-only">
-                <input type="text" id="username-in" placeholder="Display Name" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
-                <input type="text" id="bio-in" placeholder="Your Bio" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #ddd;">
+    <div id="auth-overlay" class="overlay">
+        <div class="auth-card glass-panel">
+            <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
+            <div id="auth-form">
+                <input type="email" id="email-in" placeholder="Email">
+                <input type="password" id="pass-in" placeholder="Password">
+                <div id="signup-fields">
+                    <input type="text" id="username-in" placeholder="Display Name">
+                    <input type="text" id="bio-in" placeholder="Your Bio">
+                </div>
+                <button class="aero-btn" id="auth-main-btn" onclick="handleAuth()">Sign Up</button>
+                <p id="auth-toggle" onclick="toggleAuthMode()">Already have an account? Login</p>
             </div>
-            <button class="aero-btn" id="primary-auth-btn" onclick="handleAuthAction()" style="width: 100%; margin-bottom: 10px;">Sign Up</button>
-            <p style="font-size: 12px; cursor: pointer; color: #0078d7; text-align: center;" onclick="toggleAuthMode()">Already have an account? Login</p>
         </div>
     </div>
-</div>
 
-<nav class="server-rail">
-    <div class="server-icon active" id="dm-nav" onclick="showDMs()">✉️</div>
-    <div class="server-icon" id="friends-nav" onclick="showFriendRequests()" style="font-size: 18px;">👥</div>
-    <hr style="width:30px; opacity:0.2;">
-    <div id="server-list"></div>
-    <div class="server-icon" onclick="createServerPrompt()" style="color: green;">+</div>
-</nav>
+    <nav class="server-rail">
+        <div class="server-icon active" id="nav-dm" onclick="setView('dm')">✉️</div>
+        <div class="server-icon" id="nav-friends" onclick="setView('friends')">👥</div>
+        <hr style="width:30px; opacity:0.2; margin: 10px 0;">
+        <div id="server-list"></div>
+        <div class="server-icon" onclick="addServer()" style="color: #2ecc71;">+</div>
+    </nav>
 
-<aside class="sub-sidebar">
-    <div id="sidebar-header" style="padding: 20px; font-weight: 800; font-size: 18px; color: #0078d7;">Direct Messages</div>
-    
-    <div id="sidebar-content" style="padding: 10px;">
-        </div>
-
-    <div style="margin-top:auto; padding: 15px; display:flex; align-items:center; gap:10px; background: rgba(0,0,0,0.03);">
-        <img id="my-pfp" src="https://via.placeholder.com/32" class="pfp-img" style="border-radius: 8px;">
-        <span id="my-name" style="font-size: 13px; font-weight: 600;">Loading...</span>
-    </div>
-</aside>
-
-<main class="chat-window">
-    <div id="chat-messages"></div>
-    <div class="input-area" id="input-container">
-        <input type="text" id="chat-in" class="input-box" placeholder="Select a friend or channel..." onkeypress="if(event.key==='Enter') sendMessage()">
-    </div>
-</main>
-
-<script>
-    const _supabase = supabase.createClient('YOUR_URL', 'YOUR_KEY');
-
-    let currentUser = null;
-    let isLoginMode = false;
-    let currentView = 'dm'; 
-
-    // --- AUTH LOGIC ---
-    function toggleAuthMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('signup-only').style.display = isLoginMode ? 'none' : 'block';
-        document.getElementById('primary-auth-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
-    }
-
-    async function handleAuthAction() {
-        const email = document.getElementById('email-in').value;
-        const password = document.getElementById('pass-in').value;
-
-        if (isLoginMode) {
-            const { data } = await _supabase.auth.signInWithPassword({ email, password });
-            if (data.user) location.reload();
-        } else {
-            const username = document.getElementById('username-in').value;
-            const bio = document.getElementById('bio-in').value;
-            const { data } = await _supabase.auth.signUp({ email, password });
-            if (data.user) {
-                await _supabase.from('profiles').insert([{ 
-                    id: data.user.id, 
-                    username, 
-                    bio, 
-                    pfp: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}` 
-                }]);
-                alert("Account created! You can now login.");
-                toggleAuthMode();
-            }
-        }
-    }
-
-    // --- FRIEND REQUESTS SYSTEM ---
-    async function showFriendRequests() {
-        currentView = 'friends';
-        document.getElementById('sidebar-header').innerText = "Friend Requests";
-        const cont = document.getElementById('sidebar-content');
+    <aside class="sub-sidebar">
+        <div id="sidebar-header">Direct Messages</div>
+        <div id="sidebar-content"></div>
         
-        cont.innerHTML = `
-            <input type="text" id="add-friend-in" placeholder="Username#1234" style="width:90%; padding:8px; margin-bottom:15px; border-radius:5px; border:1px solid #ddd;">
-            <button class="aero-btn" style="width:90%; font-size:12px; padding:5px;" onclick="sendFriendRequest()">Send Request</button>
-            <div class="section-label">Pending</div>
-            <div id="pending-list"></div>
-        `;
-        loadPendingRequests();
-    }
-
-    async function sendFriendRequest() {
-        const targetName = document.getElementById('add-friend-in').value;
-        // Search for user by username in profiles
-        const { data: targetUser } = await _supabase.from('profiles').select('id').eq('username', targetName).single();
-        
-        if (targetUser) {
-            await _supabase.from('friendships').insert([{ 
-                user_id: currentUser.id, 
-                friend_id: targetUser.id, 
-                status: 'pending' 
-            }]);
-            alert("Request Sent!");
-        } else {
-            alert("User not found.");
-        }
-    }
-
-    async function loadPendingRequests() {
-        const { data } = await _supabase.from('friendships')
-            .select('*, profiles!user_id(username, pfp)')
-            .eq('friend_id', currentUser.id)
-            .eq('status', 'pending');
-
-        const list = document.getElementById('pending-list');
-        list.innerHTML = data.map(req => `
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
-                <span style="font-size:13px;">${req.profiles.username}</span>
-                <button onclick="acceptFriend('${req.user_id}')" style="background:green; color:white; border:none; border-radius:4px; cursor:pointer;">✓</button>
+        <div class="user-bar">
+            <img id="my-pfp" src="https://via.placeholder.com/32">
+            <div class="user-info">
+                <span id="my-name">User</span>
+                <span id="my-status">Online</span>
             </div>
-        `).join('');
-    }
+        </div>
+    </aside>
 
-    async function acceptFriend(requesterId) {
-        await _supabase.from('friendships')
-            .update({ status: 'accepted' })
-            .eq('user_id', requesterId)
-            .eq('friend_id', currentUser.id);
-        showFriendRequests();
-    }
+    <main class="chat-window">
+        <div id="chat-messages"></div>
+        <div class="input-area">
+            <input type="text" id="chat-in" class="input-box" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()">
+        </div>
+    </main>
 
-    // --- INITIALIZATION ---
-    window.onload = async () => {
-        const { data } = await _supabase.auth.getUser();
-        if (data.user) {
-            currentUser = data.user;
-            document.getElementById('auth-overlay').style.display = 'none';
-            const { data: prof } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-            document.getElementById('my-name').innerText = prof.username;
-            document.getElementById('my-pfp').src = prof.pfp;
-            showDMs();
-        }
-    };
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
