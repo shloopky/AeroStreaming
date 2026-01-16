@@ -1,21 +1,21 @@
-/* AeroSocial — Full CSS (Original Aero Colors + Smooth Frutiger Hovers) */
+/* AeroSocial - Full CSS with fixed bottom profile + centered modal overlay */
 
 :root {
-    --accent:          #0078d7;           /* classic Aero blue */
-    --accent-light:    #4da8ff;
-    --accent-glow:     rgba(0, 120, 215, 0.25);
-    --glass:           rgba(255, 255, 255, 0.55);
-    --glass-border:    rgba(255, 255, 255, 0.35);
-    --bg-gradient:     linear-gradient(135deg, #e3f2fd, #bbdefb);
-    --danger:          #ff4757;
-    --success:         #2ed573;
-    --text:            #1a1a1a;
-    --text-light:      #555;
-    --shadow-sm:       0 4px 20px rgba(0,0,0,0.08);
-    --shadow-md:       0 12px 40px rgba(0,0,0,0.12);
-    --radius-lg:       20px;
-    --radius-md:       14px;
-    --radius-sm:       10px;
+    --accent: #0078d7;
+    --accent-light: #4da8ff;
+    --accent-glow: rgba(0, 120, 215, 0.25);
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --bg-gradient: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    --danger: #ff4757;
+    --success: #2ed573;
+    --text: #1a1a1a;
+    --text-light: #555;
+    --shadow-sm: 0 4px 20px rgba(0,0,0,0.08);
+    --shadow-md: 0 12px 40px rgba(0,0,0,0.12);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
 }
 
 * {
@@ -32,9 +32,8 @@ body, html {
     overflow: hidden;
 }
 
-/* Glass panels — classic Aero effect */
-.glass-panel,
-.overlay .glass-panel {
+/* Glass panels */
+.glass-panel {
     background: var(--glass);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
@@ -50,7 +49,7 @@ body, html {
     height: 100vh;
 }
 
-/* Server rail (leftmost) */
+/* Server rail */
 .server-rail {
     width: 78px;
     background: rgba(255,255,255,0.25);
@@ -73,7 +72,7 @@ body, html {
     justify-content: center;
     font-size: 26px;
     cursor: pointer;
-    transition: all 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* bouncy hover */
+    transition: all 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: var(--shadow-sm);
 }
 
@@ -93,7 +92,7 @@ body, html {
     box-shadow: 0 12px 40px var(--accent-glow);
 }
 
-/* Sub-sidebar (middle) */
+/* Sub-sidebar with fixed bottom bar */
 .sub-sidebar {
     width: 260px;
     background: rgba(255,255,255,0.38);
@@ -120,12 +119,10 @@ body, html {
     padding: 10px 0;
 }
 
-/* User bar — fixed/sticky at bottom */
+/* Fixed user bar at bottom */
 .user-bar {
     position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
     background: rgba(255,255,255,0.45);
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--glass-border);
@@ -166,7 +163,7 @@ body, html {
     color: var(--success);
 }
 
-/* Chat window */
+/* Chat area */
 .chat-window {
     flex: 1;
     display: flex;
@@ -183,7 +180,7 @@ body, html {
     gap: 16px;
 }
 
-/* Message bubbles — classic Aero + smooth hover */
+/* Message bubbles */
 .message-bubble {
     display: flex;
     align-items: flex-start;
@@ -212,11 +209,6 @@ body, html {
     box-shadow: 0 8px 32px var(--accent-glow);
 }
 
-.message-bubble.own:hover {
-    box-shadow: 0 16px 48px var(--accent-glow);
-    transform: translateY(-4px);
-}
-
 .pfp-img {
     width: 42px;
     height: 42px;
@@ -231,7 +223,7 @@ body, html {
     transform: scale(1.18);
 }
 
-/* Input area */
+/* Input */
 .input-area {
     padding: 16px 24px;
     background: rgba(255,255,255,0.28);
@@ -272,7 +264,7 @@ body, html {
     box-shadow: 0 12px 36px var(--accent-glow);
 }
 
-/* Friend items & active states */
+/* Friend items */
 .friend-item {
     display: flex;
     align-items: center;
@@ -294,30 +286,7 @@ body, html {
     border-left: 5px solid var(--accent);
 }
 
-.mini-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    border-radius: 50%;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.mini-btn:hover {
-    transform: scale(1.35);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-
-.mini-btn.success {
-    background: var(--success);
-    color: white;
-}
-
-.mini-btn.danger {
-    background: var(--danger);
-    color: white;
-}
-
-/* Modals & overlays — centered pop-ups */
+/* Modal overlay – centered with blur */
 .overlay {
     position: fixed;
     inset: 0;
@@ -327,6 +296,63 @@ body, html {
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.overlay[style*="display: flex"] {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal content */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    width: 380px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 24px;
+    animation: modalPop 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+}
+
+.close-btn:hover {
+    color: var(--danger);
+}
+
+.pfp-large {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    margin: 0 auto 16px;
+    display: block;
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
 }
 
 /* Scrollbar */
@@ -346,4 +372,3 @@ body, html {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-light);
 }
-
