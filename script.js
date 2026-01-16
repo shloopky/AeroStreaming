@@ -135,8 +135,12 @@ async function sendMessage() {
     if (chatType === 'server') {
         msgObj.channel_id = activeChatID;
     } else {
-        msgObj.chat_id = [currentUser.id, activeChatID].sort().join('_');
-        msgObj.receiver_id = activeChatID; // Add this line
+if (chatType === 'server') {
+        msgObj.channel_id = activeChatID;
+    } else {
+        msgObj.chat_id = getPairID(activeChatID); // Use the helper here!
+        msgObj.receiver_id = activeChatID; 
+    }
     }
 
     input.value = ''; 
