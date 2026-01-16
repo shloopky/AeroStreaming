@@ -24,18 +24,14 @@
         </div>
     </div>
 
-    <div id="profile-modal" class="overlay" style="display: none;">
-        <div class="glass-panel" style="width: 400px; text-align: center;">
-            <h3>Edit Profile</h3>
-            <div id="drop-zone" class="drop-zone">
-                <p>Drag & Drop Photo<br>or Click to Browse</p>
-                <input type="file" id="file-input" hidden accept="image/*">
-                <img id="preview-img" style="display:none; width:80px; height:80px; border-radius:50%; margin: 10px auto; object-fit: cover;">
-            </div>
-            <input type="text" id="edit-username" placeholder="Username" class="input-box" style="margin: 15px 0;">
-            <div style="display: flex; gap: 10px;">
-                <button class="aero-btn" onclick="saveProfile()">Save Changes</button>
-                <button class="aero-btn" style="background: #e74c3c;" onclick="closeProfile()">Cancel</button>
+    <div id="server-modal" class="overlay" style="display:none;">
+        <div class="glass-panel" style="width:350px;">
+            <h3>Create a Server</h3>
+            <input type="text" id="server-name-in" placeholder="Server Name" class="input-box">
+            <input type="text" id="server-icon-in" placeholder="Icon URL (Emoji or Image)" class="input-box" style="margin-top:10px;">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="aero-btn" onclick="createEmptyServer()">Create</button>
+                <button class="aero-btn" style="background:#e74c3c" onclick="document.getElementById('server-modal').style.display='none'">Cancel</button>
             </div>
         </div>
     </div>
@@ -46,16 +42,16 @@
             <div class="server-icon" id="nav-friends" onclick="setView('friends')">👥</div>
             <hr style="width:30px; opacity:0.2; margin: 10px 0;">
             <div id="server-list"></div>
-            <div class="server-icon add-btn" style="color: #2ecc71;">+</div>
+            <div class="server-icon add-btn" style="color: #2ecc71;" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
         </nav>
 
         <aside class="sub-sidebar">
             <div id="sidebar-header">Direct Messages</div>
             <div id="sidebar-content"></div>
             
-            <div class="user-bar" onclick="openProfile()">
-                <img id="my-pfp" src="https://via.placeholder.com/32" class="pfp-img">
-                <div class="user-info">
+            <div class="user-bar">
+                <img id="my-pfp" src="" class="pfp-img" onclick="openProfile()">
+                <div class="user-info" onclick="openProfile()">
                     <span id="my-name">Loading...</span>
                     <span id="my-status">Online</span>
                 </div>
