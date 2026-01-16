@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroSocial Pro</title>
+    <title>AeroSocial Pro v4.0</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,13 +11,11 @@
 
     <div id="auth-overlay">
         <div class="glass-panel">
-            <h2>AeroSocial</h2>
+            <h1>AeroSocial</h1>
             <input type="email" id="auth-email" class="input-box" placeholder="Email">
             <input type="password" id="auth-pass" class="input-box" placeholder="Password">
             <button class="aero-btn full-width" onclick="handleAuth()">Login</button>
-            <p onclick="toggleAuthMode()" style="cursor:pointer; font-size:12px; margin-top:15px; opacity:0.7;">
-                Switch Login/Signup
-            </p>
+            <p onclick="toggleAuthMode()" style="cursor:pointer; font-size:12px; margin-top:15px; opacity:0.7;">Switch Login/Signup</p>
         </div>
     </div>
 
@@ -27,8 +25,8 @@
             <input id="set-server-name" class="input-box" placeholder="Server Name">
             <input id="set-server-icon" class="input-box" placeholder="Icon (Emoji)">
             <div style="display:flex; gap:10px;">
-                <button class="aero-btn" onclick="saveServerSettings()">Save</button>
-                <button class="aero-btn" style="background:#ff4d4d" onclick="deleteServer()">Delete</button>
+                <button class="aero-btn" onclick="saveServerSettings()">Save Changes</button>
+                <button class="aero-btn" style="background:#ff4d4d" onclick="deleteServer()">Delete Server</button>
                 <button class="aero-btn" style="background:#444" onclick="closeModals()">Cancel</button>
             </div>
         </div>
@@ -43,24 +41,22 @@
 
         <div class="sidebar-glass">
             <header id="sidebar-header">Direct Messages</header>
-            <div class="scrollable" id="sidebar-content">
-                </div>
+            <div class="scrollable" id="sidebar-content"></div>
 
             <div class="user-bar" onclick="openProfile()">
                 <div class="pfp-container">
-                    <img id="my-pfp" class="pfp-img circle" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User">
+                    <img id="my-pfp" class="pfp-img circle" src="">
                     <div class="status-dot status-online"></div>
                 </div>
                 <div class="msg-body">
-                    <div id="my-name" style="font-weight:bold; font-size:14px;">Username</div>
+                    <div id="my-name" style="font-weight:bold; font-size:14px;">Loading...</div>
                     <div class="signout-btn" onclick="event.stopPropagation(); _supabase.auth.signOut(); location.reload();">Sign Out</div>
                 </div>
             </div>
         </div>
 
         <div class="chat-area">
-            <div id="chat-messages" class="scrollable">
-                </div>
+            <div id="chat-messages" class="scrollable"></div>
             <div class="input-wrapper">
                 <input type="text" id="chat-in" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
                 <button class="aero-btn" onclick="sendMessage()">➤</button>
@@ -86,10 +82,12 @@
     <div id="profile-modal" class="modal-overlay" style="display:none;">
         <div class="glass-panel">
             <h3>Edit Profile</h3>
-            <label style="display:block; text-align:left; font-size:12px;">Username</label>
-            <input id="edit-username" class="input-box">
-            <label style="display:block; text-align:left; font-size:12px;">Profile Picture URL</label>
-            <input id="edit-pfp" class="input-box">
+            <div style="text-align:left; margin-bottom:15px;">
+                <label style="font-size:12px; opacity:0.7;">Username</label>
+                <input id="edit-username" class="input-box">
+                <label style="font-size:12px; opacity:0.7;">Profile Picture URL</label>
+                <input id="edit-pfp" class="input-box">
+            </div>
             <button class="aero-btn full-width" onclick="saveProfile()">Save Changes</button>
             <button class="aero-btn full-width" style="background:transparent" onclick="closeModals()">Cancel</button>
         </div>
