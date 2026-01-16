@@ -1,3 +1,8 @@
+/**
+ * AeroSocial Pro v3.5 - Final Consolidated CSS
+ * Fixes: Circle PFPs, Giant Image Scaling, Modal Layering
+ */
+
 :root {
     --accent: #0078d4;
     --text-main: #ffffff;
@@ -8,11 +13,15 @@
     --sidebar-width: 240px;
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* --- GLOBAL RESET --- */
+* { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+}
 
 body, html {
     margin: 0; padding: 0;
-    height: 100%; font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     background: var(--bg-dark);
     color: var(--text-main);
     overflow: hidden;
@@ -25,17 +34,14 @@ body, html {
     background: linear-gradient(145deg, #161625 0%, #0a0a0f 100%);
 }
 
-/* --- SCALING & RESPONSIVENESS --- */
-@media (max-width: 768px) {
-    .member-sidebar { display: none !important; } /* Hide members on mobile */
-    .sidebar-glass { width: 200px; }
+/* --- THE CIRCLE PFP SYSTEM --- */
+.pfp-container {
+    width: 38px;
+    height: 38px;
+    position: relative;
+    flex-shrink: 0;
 }
 
-@media (max-width: 480px) {
-    .sidebar-glass { display: none; } /* Show only chat and rail on tiny screens */
-}
-
-/* --- ICONS & CIRCLES --- */
 .pfp-img.circle {
     width: 100%;
     height: 100%;
@@ -43,16 +49,10 @@ body, html {
     aspect-ratio: 1 / 1;
     object-fit: cover;
     display: block;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.pfp-container {
-    width: 35px;
-    height: 35px;
-    position: relative;
-    flex-shrink: 0;
-}
-
-/* --- SERVER RAIL --- */
+/* --- NAVIGATION RAIL (LEFT) --- */
 .server-rail {
     width: var(--rail-width);
     flex-shrink: 0;
@@ -74,48 +74,25 @@ body, html {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: 0.2s;
+    transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     font-weight: bold;
     font-size: 14px;
-    aspect-ratio: 1/1;
 }
 
 .server-icon:hover, .server-icon.active {
     border-radius: 15px;
     background: var(--accent);
+    color: white;
 }
 
-/* --- CHAT MESSAGES FIX --- */
-.message-bubble {
-    display: flex;
-    gap: 12px;
-    max-width: 90%;
-    align-items: flex-start;
+.rail-divider {
+    width: 32px;
+    height: 2px;
+    background: rgba(255,255,255,0.1);
+    margin: 5px 0;
 }
 
-.message-bubble.own {
-    align-self: flex-end;
-    flex-direction: row-reverse;
-}
-
-.msg-body {
-    display: flex;
-    flex-direction: column;
-    max-width: calc(100% - 50px);
-}
-
-.msg-content {
-    background: rgba(255, 255, 255, 0.07);
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    word-wrap: break-word;
-    word-break: break-word;
-}
-
-.own .msg-content { background: var(--accent); }
-
-/* --- SIDEBARS --- */
+/* --- SIDEBARS (CHANNELS / MEMBERS) --- */
 .sidebar-glass {
     width: var(--sidebar-width);
     flex-shrink: 0;
@@ -126,8 +103,102 @@ body, html {
     flex-direction: column;
 }
 
-.scrollable { flex: 1; overflow-y: auto; }
+.member-sidebar {
+    width: 200px;
+    border-right: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
 
+header {
+    padding: 15px;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    background: rgba(0,0,0,0.1);
+}
+
+.scrollable {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* --- CHAT AREA --- */
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.15);
+    min-width: 0; /* Important for scaling */
+}
+
+#chat-messages {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* --- MESSAGE BUBBLES --- */
+.message-bubble {
+    display: flex;
+    gap: 12px;
+    max-width: 85%;
+    align-items: flex-start;
+}
+
+.message-bubble.own {
+    flex-direction: row-reverse;
+    align-self: flex-end;
+}
+
+.msg-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.msg-meta {
+    font-size: 11px;
+    font-weight: bold;
+    opacity: 0.5;
+    margin-bottom: 4px;
+}
+
+.own .msg-meta { text-align: right; }
+
+.msg-content {
+    background: rgba(255, 255, 255, 0.07);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.own .msg-content {
+    background: var(--accent);
+}
+
+/* --- THE GIANT IMAGE FIX --- */
+.msg-content img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    margin-top: 8px;
+    display: block;
+    object-fit: contain;
+}
+
+.del-btn {
+    color: #ff4d4d;
+    cursor: pointer;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+/* --- USER BAR & STATUS --- */
 .user-bar {
     padding: 15px;
     background: rgba(0, 0, 0, 0.3);
@@ -144,11 +215,21 @@ body, html {
     position: absolute;
     bottom: 0;
     right: 0;
+    border: 2px solid #161625;
 }
-.status-online { background: #23a55a; }
-.border-bg { border: 2px solid #161625; }
 
-/* --- INPUT --- */
+.status-online { background: #23a55a; }
+
+.signout-btn {
+    font-size: 10px;
+    color: #ff4d4d;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.7;
+}
+
+/* --- INPUT BOX --- */
 .input-wrapper {
     padding: 15px;
     background: rgba(0,0,0,0.2);
@@ -164,13 +245,65 @@ body, html {
     border-radius: 8px;
     color: white;
     outline: none;
-    min-width: 0;
 }
 
-/* --- OVERLAYS --- */
-.overlay, .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 9999;
-    display: flex; align-items: center; justify-content: center;
+/* --- AUTH & MODALS --- */
+#auth-overlay, .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
+.modal-overlay { z-index: 9000; }
+
+.glass-panel {
+    background: rgba(30, 30, 45, 0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    min-width: 320px;
+}
+
+.input-box {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.aero-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* --- ITEM STATES --- */
+.friend-item, .member-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin: 2px 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.2s;
+}
+
+.friend-item:hover, .member-item:hover { background: rgba(255,255,255,0.05); }
+.active-chat { background: rgba(255,255,255,0.1) !important; }
+
+/* --- SCROLLBARS --- */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
