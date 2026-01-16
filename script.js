@@ -1,6 +1,7 @@
-/** * AeroSocial Pro v4.0 - Master Integrated Edition
- * Full Features: Auth, Server Creation/Joining, Auto-Channel, Friend System, 
- * Message Deletion, Profile Editing, Real-time Sync.
+/**
+ * AeroSocial Pro v4.0 - Ultimate Master Edition
+ * Features: Auth, Server Management (Settings/Delete), Lounges (Multi-user Server Chat),
+ * Friend System (ID Based), Profile Editing, and Real-time Sync.
  */
 
 const SB_URL = 'https://nrpiojdaltgfgswvhrys.supabase.co';
@@ -11,8 +12,7 @@ const _supabase = supabase.createClient(SB_URL, SB_KEY);
 let currentUser = null;
 let activeChatID = null;
 let currentServerID = null;
-let chatType = 'dm'; 
-let isLoginMode = true; 
+let chatType = 'dm'; // 'dm', 'server', or 'lounge'
 const GLOBAL_SERVER_ID = '00000000-0000-0000-0000-000000000000';
 
 // ────────────────────────────────────────────────
@@ -69,7 +69,7 @@ async function handleAuth() {
 }
 
 // ────────────────────────────────────────────────
-// 2. SERVER LOGIC (RESTORED)
+// 2. SERVER & LOUNGE LOGIC
 // ────────────────────────────────────────────────
 
 async function createOrJoinServer() {
@@ -77,50 +77,54 @@ async function createOrJoinServer() {
     const icon = document.getElementById('server-icon-in')?.value.trim() || "🌐";
     if (!input) return;
 
-    const isUuid = input.length > 20 && input.includes('-');
-
-    if (isUuid) {
-        // JOIN EXISTING SERVER
-        const { error } = await _supabase.from('server_members').insert([
-            { server_id: input, user_id: currentUser.id }
-        ]);
-        if (error) alert("Could not join: " + error.message);
-        else location.reload();
+    if (input.length > 20 && input.includes('-')) {
+        const { error } = await _supabase.from('server_members').insert([{ server_id: input, user_id: currentUser.id }]);
+        if (error) alert("Could not join server."); else location.reload();
     } else {
-        // CREATE NEW SERVER
-        const { data: server, error: sError } = await _supabase.from('servers').insert([
-            { name: input, icon: icon, owner_id: currentUser.id }
-        ]).select().single();
-
-        if (sError) return alert(sError.message);
-
-        // 1. Join Creator
+        const { data: server, error: sErr } = await _supabase.from('servers').insert([{ name: input, icon: icon, owner_id: currentUser.id }]).select().single();
+        if (sErr) return alert(sErr.message);
         await _supabase.from('server_members').insert([{ server_id: server.id, user_id: currentUser.id }]);
-        // 2. Create #general
-        await _supabase.from('channels').insert([{ server_id: server.id, name: 'general' }]);
-
-        alert(`Server Created! ID: ${server.id}`);
+        await _supabase.from('channels').insert([{ server_id: server.id, name: 'general', is_lounge: false }]);
         location.reload();
     }
 }
 
-async function loadServers() {
-    const list = document.getElementById('server-list');
-    list.innerHTML = `<div class="server-icon" onclick="setView('server', '${GLOBAL_SERVER_ID}')">🌎</div>`;
-    
-    const { data } = await _supabase.from('server_members').select('servers(*)').eq('user_id', currentUser.id);
-    data?.forEach(m => {
-        if (!m.servers || m.servers.id === GLOBAL_SERVER_ID) return;
-        const div = document.createElement('div');
-        div.className = 'server-icon';
-        div.textContent = m.servers.icon || '🌐';
-        div.onclick = () => setView('server', m.servers.id);
-        list.appendChild(div);
-    });
+async function createLounge() {
+    const name = prompt("Enter Lounge Name (e.g., Chill Chat):");
+    if (!name || !currentServerID) return;
+    const { error } = await _supabase.from('channels').insert([{ server_id: currentServerID, name: name, is_lounge: true }]);
+    if (error) alert(error.message); else loadChannels(currentServerID);
+}
+
+async function openServerSettings(serverId) {
+    if (serverId === GLOBAL_SERVER_ID) return;
+    const { data: server } = await _supabase.from('servers').select('*').eq('id', serverId).single();
+    if (!server) return;
+    const modal = document.getElementById('server-settings-modal');
+    document.getElementById('set-server-name').value = server.name;
+    document.getElementById('set-server-icon').value = server.icon;
+    modal.setAttribute('data-current-id', serverId);
+    modal.style.display = 'flex';
+}
+
+async function saveServerSettings() {
+    const modal = document.getElementById('server-settings-modal');
+    const id = modal.getAttribute('data-current-id');
+    const name = document.getElementById('set-server-name').value.trim();
+    const icon = document.getElementById('set-server-icon').value.trim();
+    await _supabase.from('servers').update({ name, icon }).eq('id', id);
+    location.reload();
+}
+
+async function deleteServer() {
+    const id = document.getElementById('server-settings-modal').getAttribute('data-current-id');
+    if (!confirm("Delete this server permanently?")) return;
+    await _supabase.from('servers').delete().eq('id', id);
+    location.reload();
 }
 
 // ────────────────────────────────────────────────
-// 3. NAVIGATION & CHANNELS
+// 3. NAVIGATION & VIEW
 // ────────────────────────────────────────────────
 
 async function setView(view, id = null) {
@@ -144,7 +148,13 @@ async function setView(view, id = null) {
     }
     else {
         sidebarRight.style.display = 'flex';
-        header.innerHTML = `<span>Channels</span> <span id="server-settings-btn" style="display:none; cursor:pointer;" onclick="openServerSettings('${id}')">⚙️</span>`;
+        header.innerHTML = `
+            <span>Channels</span> 
+            <div class="header-tools">
+                <span class="tool-icon" onclick="createLounge()" title="Create Lounge">💬</span>
+                <span id="server-settings-btn" class="tool-icon" style="display:none;" onclick="openServerSettings('${id}')">⚙️</span>
+            </div>
+        `;
         loadChannels(id, true);
         loadServerMembers(id);
         checkServerOwnership(id);
@@ -154,22 +164,16 @@ async function setView(view, id = null) {
 async function loadChannels(serverId, autoSelect = false) {
     const content = document.getElementById('sidebar-content');
     content.innerHTML = '';
-    
-    if (serverId !== GLOBAL_SERVER_ID) {
-        const invite = document.createElement('div');
-        invite.className = 'friend-item';
-        invite.innerHTML = `<small style="color:#7289da">Invite ID: ${serverId}</small>`;
-        invite.onclick = () => { navigator.clipboard.writeText(serverId); alert("ID Copied!"); };
-        content.appendChild(invite);
-    }
+    const { data: channels } = await _supabase.from('channels').select('*').eq('server_id', serverId).order('is_lounge', { ascending: true }).order('created_at', { ascending: true });
 
-    const { data } = await _supabase.from('channels').select('*').eq('server_id', serverId).order('created_at', {ascending: true});
-    data?.forEach((ch, i) => {
+    channels?.forEach((ch, i) => {
         const div = document.createElement('div');
-        div.className = 'friend-item';
-        div.innerHTML = `<span style="opacity:0.5; margin-right:5px;">#</span>${ch.name}`;
+        div.className = ch.is_lounge ? 'friend-item lounge-item' : 'friend-item';
+        div.innerHTML = `<span style="opacity:0.5; margin-right:8px;">${ch.is_lounge ? '🔊' : '#'}</span>${ch.name}`;
         div.onclick = () => {
-            activeChatID = ch.id; chatType = 'server'; loadMessages();
+            activeChatID = ch.id; 
+            chatType = ch.is_lounge ? 'lounge' : 'server';
+            loadMessages();
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active-chat'));
             div.classList.add('active-chat');
         };
@@ -179,7 +183,7 @@ async function loadChannels(serverId, autoSelect = false) {
 }
 
 // ────────────────────────────────────────────────
-// 4. FRIEND SYSTEM (RESTORED)
+// 4. FRIEND SYSTEM (ID BASED)
 // ────────────────────────────────────────────────
 
 function renderFriendsUI() {
@@ -191,25 +195,22 @@ function renderFriendsUI() {
             <button class="aero-btn" onclick="sendFriendRequest()" style="width:100%; margin-top:10px; background:#43b581; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer;">Add Friend</button>
             <hr style="margin:20px 0; opacity:0.1;">
             <p style="font-size:11px; opacity:0.6;">Your ID:</p>
-            <strong onclick="navigator.clipboard.writeText('${currentUser.id}')" style="cursor:pointer; color:#fff; font-family:monospace;">${currentUser.id}</strong>
+            <strong onclick="navigator.clipboard.writeText('${currentUser.id}'); alert('ID Copied!')" style="cursor:pointer; color:#fff; font-family:monospace; display:block; background:rgba(0,0,0,0.2); padding:5px;">${currentUser.id}</strong>
         </div>
     `;
 }
 
 async function sendFriendRequest() {
     const friendId = document.getElementById('friend-id-in').value.trim();
-    if (!friendId || friendId === currentUser.id) return;
+    if (!friendId || friendId === currentUser.id) return alert("Invalid ID.");
     const { error } = await _supabase.from('friends').insert([{ sender_id: currentUser.id, receiver_id: friendId, status: 'accepted' }]);
     if (error) alert("Error: User ID not found.");
     else { alert("Friend Added!"); setView('dm'); }
 }
 
 async function loadDMList() {
-    const { data } = await _supabase.from('friends')
-        .select('*, sender:profiles!friends_sender_id_fkey(*), receiver:profiles!friends_receiver_id_fkey(*)')
-        .eq('status', 'accepted')
-        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
-    
+    const { data } = await _supabase.from('friends').select('*, sender:profiles!friends_sender_id_fkey(*), receiver:profiles!friends_receiver_id_fkey(*)').eq('status', 'accepted').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+    const content = document.getElementById('sidebar-content');
     data?.forEach(rel => {
         const f = rel.sender_id === currentUser.id ? rel.receiver : rel.sender;
         const div = document.createElement('div');
@@ -220,22 +221,20 @@ async function loadDMList() {
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active-chat'));
             div.classList.add('active-chat');
         };
-        document.getElementById('sidebar-content').appendChild(div);
+        content.appendChild(div);
     });
 }
 
 // ────────────────────────────────────────────────
-// 5. CHAT ENGINE & DELETION
+// 5. CHAT ENGINE
 // ────────────────────────────────────────────────
 
 async function loadMessages() {
     if (!activeChatID) return;
     const container = document.getElementById('chat-messages');
     let query = _supabase.from('messages').select('*').order('created_at', { ascending: true });
-    
-    if (chatType === 'server') query = query.eq('channel_id', activeChatID);
+    if (chatType === 'server' || chatType === 'lounge') query = query.eq('channel_id', activeChatID);
     else query = query.eq('chat_id', [currentUser.id, activeChatID].sort().join('_'));
-
     const { data } = await query;
     container.innerHTML = ''; 
     data?.forEach(msg => appendMessageUI(msg));
@@ -246,15 +245,13 @@ async function sendMessage() {
     const input = document.getElementById('chat-in');
     const text = input.value.trim();
     if (!text || !activeChatID) return;
-
     const msgObj = {
         sender_id: currentUser.id, content: text,
         username_static: document.getElementById('my-name').textContent,
         pfp_static: document.getElementById('my-pfp').src,
-        channel_id: chatType === 'server' ? activeChatID : null,
+        channel_id: (chatType === 'server' || chatType === 'lounge') ? activeChatID : null,
         chat_id: chatType === 'dm' ? [currentUser.id, activeChatID].sort().join('_') : null
     };
-
     input.value = ''; 
     await _supabase.from('messages').insert([msgObj]);
 }
@@ -282,8 +279,21 @@ async function deleteMessage(id) {
 }
 
 // ────────────────────────────────────────────────
-// 6. SYSTEM UTILS
+// 6. SYSTEM UTILS & REALTIME
 // ────────────────────────────────────────────────
+
+async function loadServers() {
+    const list = document.getElementById('server-list');
+    list.innerHTML = `<div class="server-icon" onclick="setView('server', '${GLOBAL_SERVER_ID}')">🌎</div>`;
+    const { data } = await _supabase.from('server_members').select('servers(*)').eq('user_id', currentUser.id);
+    data?.forEach(m => {
+        if (!m.servers || m.servers.id === GLOBAL_SERVER_ID) return;
+        const div = document.createElement('div');
+        div.className = 'server-icon'; div.textContent = m.servers.icon || '🌐';
+        div.onclick = () => setView('server', m.servers.id);
+        list.appendChild(div);
+    });
+}
 
 async function checkServerOwnership(serverId) {
     const settingsBtn = document.getElementById('server-settings-btn');
@@ -295,10 +305,7 @@ async function checkServerOwnership(serverId) {
 async function loadServerMembers(serverId) {
     const container = document.getElementById('member-list-container');
     container.innerHTML = '';
-    const { data } = (serverId === GLOBAL_SERVER_ID) 
-        ? await _supabase.from('profiles').select('*').limit(30)
-        : await _supabase.from('server_members').select('profiles(*)').eq('server_id', serverId);
-    
+    const { data } = (serverId === GLOBAL_SERVER_ID) ? await _supabase.from('profiles').select('*').limit(30) : await _supabase.from('server_members').select('profiles(*)').eq('server_id', serverId);
     const users = (serverId === GLOBAL_SERVER_ID) ? data : data?.map(m => m.profiles);
     users?.forEach(u => {
         const div = document.createElement('div');
@@ -306,12 +313,6 @@ async function loadServerMembers(serverId) {
         div.innerHTML = `<img src="${u.pfp}" class="pfp-img circle" style="width:24px; height:24px; margin-right:8px;"><span>${u.username}</span>`;
         container.appendChild(div);
     });
-}
-
-function openProfile() {
-    document.getElementById('edit-username').value = document.getElementById('my-name').textContent;
-    document.getElementById('edit-pfp').value = document.getElementById('my-pfp').src;
-    document.getElementById('profile-modal').style.display = 'flex';
 }
 
 async function saveProfile() {
@@ -324,7 +325,7 @@ async function saveProfile() {
 
 async function ensureGlobalGeneralChannel() { 
     const { data: existing } = await _supabase.from('channels').select('id').eq('server_id', GLOBAL_SERVER_ID).eq('name', 'general').maybeSingle(); 
-    if (!existing) await _supabase.from('channels').insert({ server_id: GLOBAL_SERVER_ID, name: 'general' }); 
+    if (!existing) await _supabase.from('channels').insert({ server_id: GLOBAL_SERVER_ID, name: 'general', is_lounge: false }); 
 }
 
 function setupRealtime() {
