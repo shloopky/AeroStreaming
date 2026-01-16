@@ -4,6 +4,7 @@ const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
 let currentUser = null;
 let activeChatID = null;
+let currentServerID = null;
 let chatType = 'dm';
 let isLoginMode = false;
 
@@ -12,24 +13,121 @@ function setView(view, id = null) {
     const content = document.getElementById('sidebar-content');
     const header = document.getElementById('sidebar-header');
     content.innerHTML = '';
+    activeChatID = null;
     
     document.querySelectorAll('.server-icon').forEach(el => el.classList.remove('active'));
 
     if (view === 'dm') {
+        currentServerID = null;
         document.getElementById('nav-dm').classList.add('active');
-        header.innerText = "Direct Messages";
+        header.innerHTML = `Direct Messages`;
         loadDMList();
     } else if (view === 'friends') {
+        currentServerID = null;
         document.getElementById('nav-friends').classList.add('active');
         header.innerText = "Friends Management";
         renderFriendsUI();
     } else if (view === 'server') {
-        header.innerText = "Channels";
+        currentServerID = id;
+        header.innerHTML = `
+            <span>Channels</span>
+            <span class="settings-gear" onclick="openServerSettings('${id}')">⚙️</span>
+        `;
         loadChannels(id);
     }
 }
 
-// --- FRIEND SYSTEM (With Colored Feedback) ---
+// --- FRIEND REQUEST SYSTEM (FIXED) ---
+async function loadPendingRequests() {
+    const { data, error } = await _supabase.from('friends')
+        .select('id, sender:profiles!friends_sender_id_fkey(username, pfp)')
+        .eq('receiver_id', currentUser.id)
+        .eq('status', 'pending');
+    
+    const list = document.getElementById('pending-list');
+    list.innerHTML = '';
+
+    data?.forEach(req => {
+        const div = document.createElement('div');
+        div.className = 'friend-item';
+        div.style.justifyContent = 'space-between';
+        div.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="${req.sender.pfp}" class="pfp-img" style="width:24px; height:24px;">
+                <span>${req.sender.username}</span>
+            </div>
+            <div style="display:flex; gap:5px;">
+                <button onclick="respondFriend(${req.id}, 'accepted')" class="mini-btn">✔</button>
+                <button onclick="respondFriend(${req.id}, 'denied')" class="mini-btn" style="color:red">✖</button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// --- SERVER SETTINGS & DELETE ---
+async function openServerSettings(serverId) {
+    const { data: server } = await _supabase.from('servers').select('*').eq('id', serverId).single();
+    if (server.owner_id !== currentUser.id) return alert("Only the owner can access settings.");
+
+    const choice = confirm(`Server Settings for ${server.name}\n\nWould you like to DELETE this server? This cannot be undone.`);
+    if (choice) {
+        const confirmName = prompt(`Type the server name "${server.name}" to confirm deletion:`);
+        if (confirmName === server.name) {
+            await _supabase.from('servers').delete().eq('id', serverId);
+            alert("Server deleted.");
+            location.reload();
+        }
+    }
+}
+
+// --- CORE FUNCTIONALITY (Updated) ---
+async function loadChannels(serverId) {
+    const { data } = await _supabase.from('channels').eq('server_id', serverId);
+    const content = document.getElementById('sidebar-content');
+    
+    const inviteBtn = document.createElement('button');
+    inviteBtn.className = 'aero-btn';
+    inviteBtn.style.margin = "10px";
+    inviteBtn.innerText = "+ Invite People";
+    inviteBtn.onclick = () => inviteToServer(serverId);
+    content.appendChild(inviteBtn);
+
+    data?.forEach(ch => {
+        const div = document.createElement('div');
+        div.className = 'friend-item';
+        div.innerText = `# ${ch.name}`;
+        div.onclick = () => { 
+            activeChatID = ch.id; 
+            chatType = 'server'; 
+            loadMessages(); 
+            document.querySelectorAll('.friend-item').forEach(i => i.classList.remove('active-chat'));
+            div.classList.add('active-chat');
+        };
+        content.appendChild(div);
+    });
+}
+
+// --- ALL OTHER FUNCTIONS (KEEP THESE THE SAME AS PREVIOUS) ---
+async function handleAuth() {
+    const email = document.getElementById('email-in').value;
+    const password = document.getElementById('pass-in').value;
+    const username = document.getElementById('username-in').value;
+    if (!isLoginMode) {
+        const { data: existing } = await _supabase.from('profiles').eq('username', username).single();
+        if (existing) return alert("Username taken!");
+        const { data, error } = await _supabase.auth.signUp({ email, password });
+        if (error) return alert(error.message);
+        await _supabase.from('profiles').upsert([{ id: data.user.id, username, pfp: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}` }]);
+        alert("Success! Log in now.");
+        toggleAuthMode();
+    } else {
+        const { error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else location.reload();
+    }
+}
+
 function renderFriendsUI() {
     const content = document.getElementById('sidebar-content');
     content.innerHTML = `
@@ -47,144 +145,53 @@ function renderFriendsUI() {
 async function sendFriendRequest() {
     const name = document.getElementById('friend-search').value;
     const msgEl = document.getElementById('friend-msg');
-    if (!name) return;
-
     const { data: target } = await _supabase.from('profiles').eq('username', name).single();
-
-    if (!target) {
-        msgEl.innerText = "User does not exist!";
-        msgEl.style.color = "#ff4757"; // Red
-        return;
-    }
-
-    const { error } = await _supabase.from('friends').insert([{ 
-        sender_id: currentUser.id, 
-        receiver_id: target.id, 
-        status: 'pending' 
-    }]);
-
-    if (error) {
-        msgEl.innerText = "Request already pending!";
-        msgEl.style.color = "#ffa502"; // Orange
-    } else {
-        msgEl.innerText = "Friend request sent!";
-        msgEl.style.color = "#2ed573"; // Green
-    }
+    if (!target) { msgEl.innerText = "User not found"; msgEl.style.color="red"; return; }
+    const { error } = await _supabase.from('friends').insert([{ sender_id: currentUser.id, receiver_id: target.id, status: 'pending' }]);
+    if (error) { msgEl.innerText = "Already sent!"; msgEl.style.color="orange"; }
+    else { msgEl.innerText = "Request sent!"; msgEl.style.color="green"; }
 }
 
-// --- SERVER & INVITE SYSTEM ---
-async function createEmptyServer() {
-    const name = document.getElementById('server-name-in').value;
-    const icon = document.getElementById('server-icon-in').value || '📁';
-    if(!name) return alert("Please enter a name");
-
-    const { data: server } = await _supabase.from('servers').insert([{ name, icon, owner_id: currentUser.id }]).select().single();
-    
-    // Add creator as member
-    await _supabase.from('server_members').insert([{ server_id: server.id, user_id: currentUser.id }]);
-    
-    // Auto-create General channel
-    await _supabase.from('channels').insert([{ server_id: server.id, name: 'general' }]);
-    
-    location.reload();
+async function respondFriend(id, status) {
+    if (status === 'denied') await _supabase.from('friends').delete().eq('id', id);
+    else await _supabase.from('friends').update({ status }).eq('id', id);
+    setView('friends');
 }
 
-async function inviteToServer(serverId) {
-    const username = prompt("Enter username to invite:");
-    if (!username) return;
-
-    const { data: user } = await _supabase.from('profiles').eq('username', username).single();
-    if (!user) return alert("User not found");
-
-    const { error } = await _supabase.from('server_members').insert([{ server_id: serverId, user_id: user.id }]);
-    if (error) alert("User is already in this server!");
-    else alert(`Invited ${username}!`);
-}
-
-async function loadServers() {
-    // Only load servers the user is a member of
-    const { data: memberships } = await _supabase.from('server_members').select('server_id').eq('user_id', currentUser.id);
-    const serverIds = memberships.map(m => m.server_id);
-
-    const { data: servers } = await _supabase.from('servers').in('id', serverIds);
-    const list = document.getElementById('server-list');
-    
-    servers?.forEach(s => {
-        const div = document.createElement('div');
-        div.className = 'server-icon';
-        div.innerText = s.icon.length < 4 ? s.icon : '';
-        if(s.icon.length > 4) div.style.backgroundImage = `url(${s.icon})`;
-        div.onclick = () => setView('server', s.id);
-        list.appendChild(div);
-    });
-}
-
-async function loadChannels(serverId) {
-    const { data } = await _supabase.from('channels').eq('server_id', serverId);
-    const content = document.getElementById('sidebar-content');
-    
-    // Invite Button at top
-    const inviteBtn = document.createElement('button');
-    inviteBtn.className = 'aero-btn';
-    inviteBtn.style.margin = "10px";
-    inviteBtn.innerText = "+ Invite People";
-    inviteBtn.onclick = () => inviteToServer(serverId);
-    content.appendChild(inviteBtn);
-
-    data?.forEach(ch => {
-        const div = document.createElement('div');
-        div.className = 'friend-item';
-        div.innerText = `# ${ch.name}`;
-        div.onclick = () => { activeChatID = ch.id; chatType = 'server'; loadMessages(); };
-        content.appendChild(div);
-    });
-}
-
-// --- AUTH WITH USERNAME CHECK ---
-async function handleAuth() {
-    const email = document.getElementById('email-in').value;
-    const password = document.getElementById('pass-in').value;
-    const authMsg = document.getElementById('auth-msg') || document.createElement('div');
-    authMsg.id = "auth-msg";
-    document.getElementById('auth-form').prepend(authMsg);
-
-    if (isLoginMode) {
-        const { error } = await _supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            authMsg.innerText = error.message;
-            authMsg.style.color = "red";
-        } else location.reload();
-    } else {
-        const username = document.getElementById('username-in').value;
-        
-        // CHECK IF USERNAME IS TAKEN
-        const { data: existing } = await _supabase.from('profiles').eq('username', username).single();
-        if (existing) {
-            authMsg.innerText = "This username is already taken!";
-            authMsg.style.color = "red";
-            return;
-        }
-
-        const { data, error } = await _supabase.auth.signUp({ email, password });
-        if (error) return alert(error.message);
-        
-        await _supabase.from('profiles').upsert([{ id: data.user.id, username, pfp: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}` }]);
-        alert("Success! Log in now.");
-        toggleAuthMode();
-    }
-}
-
-// --- REST OF CORE FUNCTIONS (PREVIOUS CODE) ---
 async function loadDMList() {
     const { data } = await _supabase.from('friends').select('*, sender:profiles!friends_sender_id_fkey(id, username, pfp), receiver:profiles!friends_receiver_id_fkey(id, username, pfp)').eq('status', 'accepted').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
     const content = document.getElementById('sidebar-content');
     data?.forEach(rel => {
         const friend = rel.sender_id === currentUser.id ? rel.receiver : rel.sender;
         const div = document.createElement('div');
-        div.className = `friend-item ${activeChatID === friend.id ? 'active-chat' : ''}`;
+        div.className = 'friend-item';
         div.onclick = () => { activeChatID = friend.id; chatType = 'dm'; loadMessages(); };
         div.innerHTML = `<img src="${friend.pfp}" class="pfp-img" style="width:24px"> <span>${friend.username}</span>`;
         content.appendChild(div);
+    });
+}
+
+async function createEmptyServer() {
+    const name = document.getElementById('server-name-in').value;
+    const icon = document.getElementById('server-icon-in').value || '📁';
+    const { data: server } = await _supabase.from('servers').insert([{ name, icon, owner_id: currentUser.id }]).select().single();
+    await _supabase.from('server_members').insert([{ server_id: server.id, user_id: currentUser.id }]);
+    await _supabase.from('channels').insert([{ server_id: server.id, name: 'general' }]);
+    location.reload();
+}
+
+async function loadServers() {
+    const { data: memberships } = await _supabase.from('server_members').select('server_id').eq('user_id', currentUser.id);
+    const serverIds = memberships.map(m => m.server_id);
+    const { data: servers } = await _supabase.from('servers').in('id', serverIds);
+    const list = document.getElementById('server-list');
+    servers?.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'server-icon';
+        div.innerText = s.icon.length < 4 ? s.icon : '';
+        if(s.icon.length >= 4) div.style.backgroundImage = `url(${s.icon})`;
+        div.onclick = () => setView('server', s.id);
+        list.appendChild(div);
     });
 }
 
