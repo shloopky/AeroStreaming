@@ -532,3 +532,17 @@ async function loadChannels(serverId) {
         content.appendChild(div);
     });
 }
+
+function renderFriendsUI() {
+    const content = document.getElementById('sidebar-content');
+    content.innerHTML = `
+        <div style="padding:15px;">
+            <label style="font-size:11px; font-weight:bold; color:var(--accent);">ADD FRIEND BY ID</label>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <input type="text" id="friend-id-in" class="input-box" placeholder="User UUID...">
+                <button class="aero-btn" style="width:60px;" onclick="sendFriendRequest()">Add</button>
+            </div>
+            <p style="font-size:10px; opacity:0.6; margin-top:10px;">Your ID: ${currentUser.id}</p>
+        </div>
+    `;
+}
