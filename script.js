@@ -1,6 +1,6 @@
 /**
- * AeroSocial Pro v2.0
- * Features: Aero Glass Logic, DM/Server Routing, Friend Requests
+ * AeroSocial Pro v2.5 - Global Edition
+ * Features: Global Hub, Glass UI, DMs, Friend Requests, Profile Cooldowns
  */
 
 const SB_URL = 'https://nrpiojdaltgfgswvhrys.supabase.co';
@@ -16,6 +16,7 @@ let lastProfileUpdate = null;
 let isLoginMode = true; 
 
 const PROFILE_COOLDOWN_MINUTES = 20;
+const GLOBAL_SERVER_ID = '00000000-0000-0000-0000-000000000000';
 
 // ────────────────────────────────────────────────
 // 1. APP INITIALIZATION
@@ -77,7 +78,10 @@ function setView(view, id = null) {
     } else if (view === 'server') {
         currentServerID = id;
         header.innerHTML = `<span>Channels</span> <span class="settings-gear" onclick="openServerSettings('${id}')">⚙️</span>`;
-        document.querySelector(`.server-icon[data-server-id="${id}"]`)?.classList.add('active');
+        
+        const iconEl = document.querySelector(`.server-icon[data-server-id="${id}"]`);
+        if (iconEl) iconEl.classList.add('active');
+        
         loadChannels(id);
     }
 }
@@ -120,7 +124,9 @@ async function sendMessage() {
         sender_id: currentUser.id,
         content: text,
         username_static: document.getElementById('my-name').innerText,
-        pfp_static: document.getElementById('my-pfp').src
+        pfp_static: document.getElementById('my-pfp').src,
+        channel_id: null,
+        chat_id: null
     };
 
     if (chatType === 'server') {
@@ -160,7 +166,7 @@ function scrollToBottom() {
 }
 
 // ────────────────────────────────────────────────
-// 4. FRIENDS LOGIC (THE MISSING PIECES)
+// 4. FRIENDS & PROFILES
 // ────────────────────────────────────────────────
 
 function renderFriendsUI() {
@@ -190,33 +196,80 @@ async function sendFriendRequest() {
         { sender_id: currentUser.id, receiver_id: friendId, status: 'accepted' }
     ]);
 
-    if (error) {
-        alert("Error: Make sure the ID is correct.");
-    } else {
-        alert("Friend added!");
-        setView('dm');
-    }
+    if (error) alert("Error: Make sure the ID is correct.");
+    else { alert("Friend added!"); setView('dm'); }
+}
+
+async function showProfile(userId) {
+    const { data: prof, error } = await _supabase.from('profiles').select('*').eq('id', userId).single();
+    if (error || !prof) return;
+
+    const isOwn = userId === currentUser.id;
+    document.getElementById('profile-title').innerText = isOwn ? "Your Profile" : `${prof.username}'s Profile`;
+    document.getElementById('profile-pfp-large').src = prof.pfp;
+    
+    const editSection = document.getElementById('edit-profile-section');
+    if (editSection) editSection.style.display = isOwn ? 'block' : 'none';
+
+    document.getElementById('profile-modal').style.display = 'flex';
 }
 
 // ────────────────────────────────────────────────
-// 5. SERVER & CHANNEL LOGIC (FIXED)
+// 5. SERVER & CHANNEL LOGIC (GLOBAL HUB ENABLED)
 // ────────────────────────────────────────────────
+
+async function loadServers() {
+    const list = document.getElementById('server-list');
+    list.innerHTML = '';
+
+    // Always Add Global Hub First
+    const globalDiv = document.createElement('div');
+    globalDiv.className = 'server-icon';
+    globalDiv.dataset.serverId = GLOBAL_SERVER_ID;
+    globalDiv.textContent = '🌎';
+    globalDiv.title = "Global Hub";
+    globalDiv.onclick = () => setView('server', GLOBAL_SERVER_ID);
+    list.appendChild(globalDiv);
+
+    const { data: memberships } = await _supabase.from('server_members').select('server_id').eq('user_id', currentUser.id);
+    
+    if (memberships && memberships.length > 0) {
+        const serverIds = memberships.map(m => m.server_id);
+        const { data: servers } = await _supabase.from('servers').select('*').in('id', serverIds);
+
+        servers?.forEach(s => {
+            if (s.id === GLOBAL_SERVER_ID) return;
+            const div = document.createElement('div');
+            div.className = 'server-icon';
+            div.dataset.serverId = s.id;
+            if (s.icon.startsWith('http')) {
+                div.style.backgroundImage = `url(${s.icon})`;
+                div.style.backgroundSize = 'cover';
+            } else div.textContent = s.icon;
+            div.onclick = () => setView('server', s.id);
+            list.appendChild(div);
+        });
+    }
+}
 
 async function loadChannels(serverId) {
     const content = document.getElementById('sidebar-content');
-    content.innerHTML = ''; // FIX: Clear before loading
+    content.innerHTML = ''; 
 
     const { data } = await _supabase.from('channels').select('*').eq('server_id', serverId);
 
-    const inviteBtn = document.createElement('div');
-    inviteBtn.className = 'friend-item';
-    inviteBtn.style.color = 'var(--accent)';
-    inviteBtn.innerHTML = `<strong>+ Copy Server ID</strong>`;
-    inviteBtn.onclick = () => {
-        navigator.clipboard.writeText(serverId);
-        alert("Server ID copied!");
-    };
-    content.appendChild(inviteBtn);
+    // Only show "Copy ID" for personal servers, not Global
+    if (serverId !== GLOBAL_SERVER_ID) {
+        const inviteBtn = document.createElement('div');
+        inviteBtn.className = 'friend-item';
+        inviteBtn.style.color = 'var(--accent)';
+        inviteBtn.innerHTML = `<strong>+ Copy Server ID</strong>`;
+        inviteBtn.onclick = () => {
+            navigator.clipboard.writeText(serverId);
+            alert("Server ID copied!");
+        };
+        content.appendChild(inviteBtn);
+    }
 
     data?.forEach(ch => {
         const div = document.createElement('div');
@@ -232,49 +285,17 @@ async function loadChannels(serverId) {
         content.appendChild(div);
     });
 }
-async function loadServers() {
-    const list = document.getElementById('server-list');
-    list.innerHTML = '';
 
-    // 1. ADD THE GLOBAL SERVER MANUALLY (For everyone)
-    const globalDiv = document.createElement('div');
-    globalDiv.className = 'server-icon global-icon';
-    globalDiv.textContent = '🌎';
-    globalDiv.title = "Global Hub";
-    globalDiv.onclick = () => setView('server', '00000000-0000-0000-0000-000000000000');
-    list.appendChild(globalDiv);
-
-    // 2. LOAD PERSONAL SERVERS
-    const { data: memberships } = await _supabase.from('server_members')
-        .select('server_id')
-        .eq('user_id', currentUser.id);
-
-    if (memberships && memberships.length > 0) {
-        const serverIds = memberships.map(m => m.server_id);
-        const { data: servers } = await _supabase.from('servers').select('*').in('id', serverIds);
-
-        servers?.forEach(s => {
-            // Prevent duplicating the global server if someone joined it manually
-            if (s.id === '00000000-0000-0000-0000-000000000000') return;
-
-            const div = document.createElement('div');
-            div.className = 'server-icon';
-            div.dataset.serverId = s.id;
-            
-            if (s.icon.startsWith('http')) {
-                div.style.backgroundImage = `url(${s.icon})`;
-                div.style.backgroundSize = 'cover';
-            } else {
-                div.textContent = s.icon;
-            }
-
-            div.onclick = () => setView('server', s.id);
-            list.appendChild(div);
-        });
+function openServerSettings(serverId) {
+    if (serverId === GLOBAL_SERVER_ID) {
+        return alert("The Global Hub is managed by the system and cannot be modified.");
     }
+    currentServerID = serverId;
+    document.getElementById('server-settings-modal').style.display = 'flex';
 }
+
 // ────────────────────────────────────────────────
-// 6. REMAINING CORE FUNCTIONS (AUTH & SETTINGS)
+// 6. AUTH & SYSTEM
 // ────────────────────────────────────────────────
 
 function setupRealtime() {
@@ -315,29 +336,6 @@ function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     document.getElementById('signup-fields').style.display = isLoginMode ? 'none' : 'block';
     document.getElementById('auth-main-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
-}
-
-async function loadServers() {
-    const { data: memberships } = await _supabase.from('server_members').select('server_id').eq('user_id', currentUser.id);
-    if (!memberships) return;
-    const serverIds = memberships.map(m => m.server_id);
-    const { data: servers } = await _supabase.from('servers').select('*').in('id', serverIds);
-    const list = document.getElementById('server-list');
-    list.innerHTML = '';
-    servers?.forEach(s => {
-        const div = document.createElement('div');
-        div.className = 'server-icon';
-        div.dataset.serverId = s.id;
-        if (s.icon.startsWith('http')) div.style.backgroundImage = `url(${s.icon})`;
-        else div.textContent = s.icon;
-        div.onclick = () => setView('server', s.id);
-        list.appendChild(div);
-    });
-}
-
-function openServerSettings(serverId) {
-    currentServerID = serverId;
-    document.getElementById('server-settings-modal').style.display = 'flex';
 }
 
 function closeServerSettings() {
