@@ -3,145 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroSocial</title>
+    <title>AeroSocial Pro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Auth Overlay -->
+
     <div id="auth-overlay" class="overlay">
-        <div class="glass-panel auth-card">
-            <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
-            <div id="auth-form">
-                <input type="email" id="email-in" placeholder="Email">
-                <input type="password" id="pass-in" placeholder="Password">
-                <div id="signup-fields">
-                    <input type="text" id="username-in" placeholder="Display Name">
-                </div>
-                <button class="aero-btn" id="auth-main-btn" onclick="handleAuth()">Sign Up</button>
-                <p id="auth-toggle" onclick="toggleAuthMode()">Already have an account? Login</p>
+        <div class="glass-panel auth-box">
+            <h2 id="auth-title">AeroSocial</h2>
+            <div id="signup-fields" style="display:none;">
+                <input type="text" id="username-in" placeholder="Username" class="input-box">
             </div>
-        </div>
-    </div>
-    
-<div id="server-settings-modal" class="overlay" style="display:none;">
-    <div class="glass-panel" style="width:400px;">
-        <div class="modal-header">
-            <h3>Server Settings</h3>
-            <button class="close-btn" onclick="closeServerSettings()">×</button>
-        </div>
-        
-        <div class="profile-info">
-            <label>Server Icon URL</label>
-            <input type="text" id="edit-server-icon" class="input-box" placeholder="https://...">
-            <button class="aero-btn" style="margin-top:10px;" onclick="updateServerIcon()">Update Icon</button>
-        </div>
-
-        <hr style="opacity:0.2; margin:20px 0;">
-
-        <div class="profile-info">
-            <label>Create New Channel</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="new-channel-name" class="input-box" placeholder="channel-name">
-                <button class="aero-btn" style="width:80px;" onclick="createNewChannel()">Add</button>
-            </div>
-        </div>
-
-        <hr style="opacity:0.2; margin:20px 0;">
-
-        <button class="aero-btn" style="background:#e74c3c" onclick="deleteServer()">Delete Server</button>
-    </div>
-    
-</div>
-    <!-- Server Creation/Join Modal -->
-    <div id="server-modal" class="overlay" style="display:none;">
-        <div class="glass-panel" style="width:350px;">
-            <h3>Create or Join a Server</h3>
-            <input type="text" id="server-name-in" placeholder="Server Name (to create) or ID (to join)" class="input-box">
-            <input type="text" id="server-icon-in" placeholder="Icon URL (optional)" class="input-box" style="margin-top:10px;">
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="aero-btn" onclick="createOrJoinServer()">Go</button>
-                <button class="aero-btn" style="background:#e74c3c" onclick="document.getElementById('server-modal').style.display='none'">Cancel</button>
-            </div>
+            <input type="email" id="email-in" placeholder="Email" class="input-box">
+            <input type="password" id="pass-in" placeholder="Password" class="input-box">
+            <button id="auth-main-btn" class="aero-btn" onclick="handleAuth()">Login</button>
+            <p onclick="toggleAuthMode()" style="cursor:pointer; font-size:12px; margin-top:10px; opacity:0.7;">Switch Login/Signup</p>
         </div>
     </div>
 
-    <!-- Profile Modal -->
-    <div id="profile-modal" class="overlay" style="display:none;">
-        <div class="glass-panel profile-modal-content">
-            <div class="modal-header">
-                <h3 id="profile-title">Your Profile</h3>
-                <button class="close-btn" onclick="closeProfileModal()">×</button>
-            </div>
-            <img id="profile-pfp-large" src="" class="pfp-large" alt="Profile Picture">
-            <div class="profile-info">
-                <label>Username</label>
-                <input type="text" id="profile-username" readonly>
-                <label>Status</label>
-                <span>Online</span>
-            </div>
-            <div id="edit-profile-section" style="display:none;">
-                <h4>Edit Profile</h4>
-                <label>Display Name</label>
-                <input type="text" id="edit-username" class="input-box">
-                <label>Profile Picture URL</label>
-                <input type="text" id="edit-pfp-url" class="input-box" placeholder="https://... or leave empty">
-                <div class="edit-buttons">
-                    <button class="aero-btn" onclick="saveProfileChanges()">Save Changes</button>
-                    <button class="aero-btn cancel" onclick="closeProfileModal()">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main App -->
     <div class="app-container">
-        <!-- Server Rail -->
         <nav class="server-rail">
-            <div class="server-icon active" id="nav-dm" onclick="setView('dm')">✉️</div>
-            <div class="server-icon" id="nav-friends" onclick="setView('friends')">👥</div>
-            <hr style="width:30px; opacity:0.2; margin: 10px 0;">
+            <div class="server-icon nav-item" id="nav-dm" onclick="setView('dm')" title="Direct Messages">DM</div>
+            <div class="server-icon nav-item" id="nav-friends" onclick="setView('friends')" title="Friends">👥</div>
+            <hr style="width:30px; opacity:0.2;">
             <div id="server-list"></div>
-            <div class="server-icon add-btn" style="color: #2ecc71;" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
+            <div class="server-icon add-server" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
         </nav>
 
-        <!-- Sub-Sidebar -->
-        <aside class="sub-sidebar">
-            <div id="sidebar-header">Direct Messages</div>
+        <aside class="sidebar-glass">
+            <header id="sidebar-header">Direct Messages</header>
             <div id="sidebar-content"></div>
-
-            <!-- Fixed User Bar at Bottom -->
-            <div class="user-bar">
-                <img id="my-pfp" src="" class="pfp-img" onclick="showProfile(currentUser?.id)">
-                <div class="user-info" onclick="showProfile(currentUser?.id)">
-                    <span id="my-name">Loading...</span>
-                    <span id="my-status">Online</span>
-                </div>
-            </div>
+            <footer class="user-bar">
+                <img id="my-pfp" src="" class="pfp-img">
+                <span id="my-name">Loading...</span>
+            </footer>
         </aside>
 
-<div class="content-area" style="display:flex;">
-    <div class="chat-area" style="flex:1; display:flex; flex-direction:column;">
-        <div id="chat-messages" class="messages-container"></div>
-        <div class="input-area">
-             <input type="text" id="chat-in" placeholder="Message...">
-             <button onclick="sendMessage()">Send</button>
-        </div>
-    </div>
-
-    <div id="member-list-container" class="member-list">
-        </div>
-</div>
-        <!-- Chat Window -->
-        <main class="chat-window">
+        <main class="chat-area">
             <div id="chat-messages"></div>
-            <div class="input-area">
-                <input type="text" id="chat-in" class="input-box" placeholder="Message..." 
-                       onkeypress="if(event.key==='Enter') sendMessage()" autocomplete="off">
+            <div class="input-wrapper">
+                <input type="text" id="chat-in" placeholder="Message..." onkeydown="if(event.key==='Enter') sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">➤</button>
             </div>
         </main>
+
+        <aside id="member-list-sidebar" class="sidebar-glass member-sidebar">
+            <header>Members</header>
+            <div id="member-list-container"></div>
+        </aside>
+    </div>
+
+    <div id="server-modal" class="modal-overlay" onclick="this.style.display='none'">
+        <div class="glass-panel modal-content" onclick="event.stopPropagation()">
+            <h3>Create or Join Server</h3>
+            <input type="text" id="server-name-in" placeholder="Server Name or ID" class="input-box">
+            <button class="aero-btn" onclick="createOrJoinServer()">Confirm</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
 </body>
+</html>
 </html>
