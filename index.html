@@ -8,7 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
     <div id="auth-overlay" class="overlay">
         <div class="auth-card glass-panel">
             <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
@@ -23,23 +22,6 @@
             </div>
         </div>
     </div>
-
-    <div id="profile-modal" class="overlay" style="display: none;">
-        <div class="glass-panel" style="width: 400px; text-align: center;">
-            <h3>Edit Profile</h3>
-            <div id="drop-zone" class="drop-zone">
-                <p>Drag & Drop Photo<br>or Click to Browse</p>
-                <input type="file" id="file-input" hidden accept="image/*">
-                <img id="preview-img" style="display:none; width:80px; height:80px; border-radius:50%; margin: 10px auto; object-fit: cover;">
-            </div>
-            <input type="text" id="edit-username" placeholder="Username" class="input-box" style="margin: 15px 0;">
-            <div style="display: flex; gap: 10px;">
-                <button class="aero-btn" onclick="saveProfile()">Save Changes</button>
-                <button class="aero-btn" style="background: #e74c3c;" onclick="closeProfile()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <div id="server-modal" class="overlay" style="display:none;">
         <div class="glass-panel" style="width:350px;">
             <h3>Create a Server</h3>
@@ -51,7 +33,6 @@
             </div>
         </div>
     </div>
-
     <div class="app-container">
         <nav class="server-rail">
             <div class="server-icon active" id="nav-dm" onclick="setView('dm')">✉️</div>
@@ -60,11 +41,10 @@
             <div id="server-list"></div>
             <div class="server-icon add-btn" style="color: #2ecc71;" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
         </nav>
-
         <aside class="sub-sidebar">
             <div id="sidebar-header">Direct Messages</div>
             <div id="sidebar-content"></div>
-            
+           
             <div class="user-bar">
                 <img id="my-pfp" src="" class="pfp-img" onclick="openProfile()">
                 <div class="user-info" onclick="openProfile()">
@@ -73,7 +53,6 @@
                 </div>
             </div>
         </aside>
-
         <main class="chat-window">
             <div id="chat-messages"></div>
             <div class="input-area">
@@ -81,7 +60,6 @@
             </div>
         </main>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
