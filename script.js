@@ -1,6 +1,6 @@
-/** * AeroSocial Pro v4.0 - Fixed Edition 
-* Fixes: General Channel Clickability & Owner Settings Access
-*/
+/** * AeroSocial Pro v4.0 - Ultimate Edition (Complete Restore)
+ * Features: Auth, Real-time Chat, Server Logic, Friend System, Profile Editing, Message Deletion
+ */
 const SB_URL = 'https://nrpiojdaltgfgswvhrys.supabase.co'; 
 const SB_KEY = 'sb_publishable_nu-if7EcpRJkKD9bXM97Rg__X3ELLW7'; 
 const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -69,94 +69,131 @@ async function handleAuth() {
     } 
 }
 
-async function signOut() { 
-    await _supabase.auth.signOut(); 
-    location.reload(); 
-}
-
 function toggleAuthMode() { 
     isLoginMode = !isLoginMode; 
     document.getElementById('signup-fields').style.display = isLoginMode ? 'none' : 'block'; 
     document.getElementById('auth-main-btn').innerText = isLoginMode ? 'Login' : 'Sign Up'; 
 }
 
-// ────────────────────────────────────────────────
-// 2. SERVER & CHANNEL LOGIC (FIXED)
-// ────────────────────────────────────────────────
+async function signOut() { 
+    await _supabase.auth.signOut(); 
+    location.reload(); 
+}
 
-// FIX: Check if current user owns the server to show settings
+// ────────────────────────────────────────────────
+// 2. PROFILE MANAGEMENT
+// ────────────────────────────────────────────────
+function openProfile() { 
+    const name = document.getElementById('my-name').textContent; 
+    const pfp = document.getElementById('my-pfp').src; 
+    document.getElementById('edit-username').value = name; 
+    document.getElementById('edit-pfp').value = pfp; 
+    document.getElementById('profile-modal').style.display = 'flex'; 
+}
+
+async function saveProfile() { 
+    const newName = document.getElementById('edit-username').value.trim(); 
+    const newPfp = document.getElementById('edit-pfp').value.trim(); 
+    if(!newName) return alert("Username cannot be empty");
+
+    const { error } = await _supabase.from('profiles').update({ 
+        username: newName, 
+        pfp: newPfp 
+    }).eq('id', currentUser.id);
+
+    if(error) return alert("Error updating profile: " + error.message);
+    updateLocalUI(newName, newPfp); 
+    document.getElementById('profile-modal').style.display = 'none'; 
+}
+
+// ────────────────────────────────────────────────
+// 3. FRIEND SYSTEM
+// ────────────────────────────────────────────────
+async function sendFriendRequest() {
+    const targetUsername = prompt("Enter username to add:");
+    if (!targetUsername) return;
+    const { data: targetUser, error: findError } = await _supabase.from('profiles').select('id').eq('username', targetUsername).single();
+    if (findError || !targetUser) return alert("User not found.");
+    await _supabase.from('friends').insert([{ sender_id: currentUser.id, receiver_id: targetUser.id, status: 'pending' }]);
+    alert("Friend request sent!");
+}
+
+async function loadFriendRequests() {
+    const { data: requests } = await _supabase.from('friends').select('*, sender:profiles!friends_sender_id_fkey(*)').eq('receiver_id', currentUser.id).eq('status', 'pending');
+    const container = document.getElementById('sidebar-content');
+    if (requests?.length > 0) {
+        const title = document.createElement('div');
+        title.className = "sidebar-section-title";
+        title.innerText = "Pending Requests";
+        container.appendChild(title);
+        requests.forEach(req => {
+            const div = document.createElement('div');
+            div.className = 'friend-item';
+            div.innerHTML = `<span>${req.sender.username}</span><div><button onclick="handleRequest('${req.id}', 'accepted')">✔</button><button onclick="handleRequest('${req.id}', 'declined')">✘</button></div>`;
+            container.appendChild(div);
+        });
+    }
+}
+
+async function handleRequest(id, newStatus) {
+    if (newStatus === 'declined') await _supabase.from('friends').delete().eq('id', id);
+    else await _supabase.from('friends').update({ status: 'accepted' }).eq('id', id);
+    setView('dm');
+}
+
+// ────────────────────────────────────────────────
+// 4. SERVER & CHANNEL LOGIC (FIXED)
+// ────────────────────────────────────────────────
 async function checkServerOwnership(serverId) {
     const settingsBtn = document.getElementById('server-settings-btn');
     if (!settingsBtn) return;
-
-    if (serverId === GLOBAL_SERVER_ID) {
-        settingsBtn.style.display = 'none';
-        return;
-    }
-
-    const { data: server } = await _supabase
-        .from('servers')
-        .select('owner_id')
-        .eq('id', serverId)
-        .single();
-
-    if (server && server.owner_id === currentUser.id) {
-        settingsBtn.style.display = 'block'; // Show settings icon
-    } else {
-        settingsBtn.style.display = 'none'; // Hide for non-owners
-    }
+    if (serverId === GLOBAL_SERVER_ID) { settingsBtn.style.display = 'none'; return; }
+    const { data: server } = await _supabase.from('servers').select('owner_id').eq('id', serverId).single();
+    settingsBtn.style.display = (server && server.owner_id === currentUser.id) ? 'block' : 'none';
 }
 
 async function loadChannels(serverId, autoSelect = false) { 
     const content = document.getElementById('sidebar-content'); 
     content.innerHTML = '';
-
-    const { data, error } = await _supabase 
-        .from('channels') 
-        .select('*') 
-        .eq('server_id', serverId) 
-        .order('created_at', { ascending: true });
-
-    if (error || !data?.length) { 
-        content.innerHTML = '<div style="padding:20px; opacity:0.6; text-align:center;">No channels</div>'; 
-        return; 
-    } 
+    const { data } = await _supabase.from('channels').select('*').eq('server_id', serverId).order('created_at', { ascending: true });
+    if (!data?.length) { content.innerHTML = '<div class="empty-notice">No channels</div>'; return; } 
 
     data.forEach((ch, i) => { 
         const div = document.createElement('div'); 
-        div.className = 'friend-item channel-item'; // Added specific class
-        div.setAttribute('data-ch-id', ch.id);
-        div.innerHTML = `<span style="color:#7289da; font-weight:bold; margin-right:4px;">#</span>${ch.name}`; 
-        
-        // FIX: Improved click handler
+        div.className = 'friend-item'; 
+        div.innerHTML = `<span class="hash">#</span>${ch.name}`; 
         div.onclick = () => { 
-            activeChatID = ch.id; 
-            chatType = 'server'; 
-            loadMessages(); 
+            activeChatID = ch.id; chatType = 'server'; loadMessages(); 
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active-chat')); 
             div.classList.add('active-chat'); 
         }; 
         content.appendChild(div); 
-
         if (autoSelect && i === 0) div.click(); 
     }); 
 }
 
+async function createOrJoinServer() { 
+    const name = document.getElementById('server-name-in').value.trim(); 
+    if (!name) return;
+    if (name.includes('-') && name.length > 20) { 
+        await _supabase.from('server_members').insert([{ server_id: name, user_id: currentUser.id }]); 
+    } else { 
+        const { data: server } = await _supabase.from('servers').insert([{ name: name, icon: '🌐', owner_id: currentUser.id }]).select().single();
+        await _supabase.from('server_members').insert([{ server_id: server.id, user_id: currentUser.id }]);
+        await _supabase.from('channels').insert([{ server_id: server.id, name: 'general' }]); 
+    } 
+    location.reload(); 
+}
+
 // ────────────────────────────────────────────────
-// 3. CHAT ENGINE
+// 5. CHAT ENGINE
 // ────────────────────────────────────────────────
 async function loadMessages() { 
     if (!activeChatID) return; 
     const container = document.getElementById('chat-messages'); 
-    
     let query = _supabase.from('messages').select('*').order('created_at', { ascending: true }); 
-    
-    if (chatType === 'server') { 
-        query = query.eq('channel_id', activeChatID); 
-    } else { 
-        query = query.eq('chat_id', [currentUser.id, activeChatID].sort().join('_')); 
-    }
-
+    if (chatType === 'server') query = query.eq('channel_id', activeChatID); 
+    else query = query.eq('chat_id', [currentUser.id, activeChatID].sort().join('_')); 
     const { data } = await query; 
     container.innerHTML = ''; 
     data?.forEach(msg => appendMessageUI(msg)); 
@@ -167,19 +204,13 @@ async function sendMessage() {
     const input = document.getElementById('chat-in'); 
     const text = input.value.trim(); 
     if (!text || !activeChatID) return;
-
-    const myName = document.getElementById('my-name').textContent; 
-    const myPfp = document.getElementById('my-pfp').src;
-
     const msgObj = { 
-        sender_id: currentUser.id, 
-        content: text, 
-        username_static: myName, 
-        pfp_static: myPfp, 
+        sender_id: currentUser.id, content: text, 
+        username_static: document.getElementById('my-name').textContent, 
+        pfp_static: document.getElementById('my-pfp').src, 
         channel_id: chatType === 'server' ? activeChatID : null, 
         chat_id: chatType === 'dm' ? [currentUser.id, activeChatID].sort().join('_') : null 
     };
-
     input.value = ''; 
     await _supabase.from('messages').insert([msgObj]); 
 }
@@ -189,76 +220,91 @@ function appendMessageUI(msg) {
     const isMe = msg.sender_id === currentUser.id; 
     const div = document.createElement('div'); 
     div.className = `message-bubble ${isMe ? 'own' : ''}`; 
-    
     div.innerHTML = `
         <div class="pfp-container"><img src="${msg.pfp_static}" class="pfp-img circle"></div>
         <div class="msg-body">
-            <span class="msg-meta">
-                ${msg.username_static}
-                ${isMe ? `<span class="del-btn" onclick="deleteMessage('${msg.id}')">×</span>` : ''}
-            </span>
+            <span class="msg-meta">${msg.username_static}${isMe ? `<span class="del-btn" onclick="deleteMessage('${msg.id}')">×</span>` : ''}</span>
             <div class="msg-content">${msg.content}</div>
         </div>`; 
     container.appendChild(div); 
     container.scrollTop = container.scrollHeight; 
 }
 
+async function deleteMessage(id) { 
+    if(!confirm("Delete this message?")) return; 
+    await _supabase.from('messages').delete().eq('id', id).eq('sender_id', currentUser.id); 
+    loadMessages(); 
+}
+
 // ────────────────────────────────────────────────
-// 4. VIEW & NAVIGATION (FIXED)
+// 6. NAVIGATION & REALTIME
 // ────────────────────────────────────────────────
 function setView(view, id = null) { 
     currentServerID = id; 
     const sidebarRight = document.getElementById('member-list-sidebar'); 
     const header = document.getElementById('sidebar-header'); 
     const sidebarContent = document.getElementById('sidebar-content'); 
-    
     sidebarContent.innerHTML = ''; 
     document.querySelectorAll('.server-icon').forEach(el => el.classList.remove('active'));
 
     if (view === 'dm') { 
         sidebarRight.style.display = 'none'; 
-        header.innerHTML = 'Direct Messages'; 
-        loadDMList(); 
+        header.innerHTML = 'Direct Messages <button onclick="sendFriendRequest()" class="add-btn">+</button>'; 
+        loadDMList(); loadFriendRequests();
         document.querySelector('.server-icon[onclick*="dm"]')?.classList.add('active'); 
     } else { 
         sidebarRight.style.display = 'flex'; 
         header.innerHTML = 'Channels'; 
-        
-        const activeIcon = document.querySelector(`.server-icon[onclick*="${id}"]`); 
-        if(activeIcon) activeIcon.classList.add('active');
-
-        loadChannels(id, true); 
-        loadServerMembers(id);
-        checkServerOwnership(id); // FIX: Restore settings for owner
+        const icon = document.querySelector(`.server-icon[onclick*="${id}"]`); 
+        if(icon) icon.classList.add('active');
+        loadChannels(id, true); loadServerMembers(id); checkServerOwnership(id);
     } 
 }
 
 async function loadServers() { 
     const list = document.getElementById('server-list'); 
     list.innerHTML = `<div class="server-icon" onclick="setView('server', '${GLOBAL_SERVER_ID}')">🌎</div>`; 
-    
     const { data } = await _supabase.from('server_members').select('servers(*)').eq('user_id', currentUser.id); 
-    
     data?.forEach(m => { 
         if (!m.servers || m.servers.id === GLOBAL_SERVER_ID) return; 
         const div = document.createElement('div'); 
-        div.className = 'server-icon'; 
-        div.textContent = m.servers.icon || '🌐'; 
+        div.className = 'server-icon'; div.textContent = m.servers.icon || '🌐'; 
         div.onclick = () => setView('server', m.servers.id); 
         list.appendChild(div); 
     }); 
 }
 
-function setupRealtime() { 
-    _supabase.channel('public-chat') 
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { 
-            loadMessages(); 
-        }) 
-        .subscribe(); 
+async function loadServerMembers(serverId) {
+    const container = document.getElementById('member-list-container');
+    container.innerHTML = '';
+    const { data } = (serverId === GLOBAL_SERVER_ID) ? await _supabase.from('profiles').select('*').limit(30) : await _supabase.from('server_members').select('profiles(*)').eq('server_id', serverId);
+    const users = (serverId === GLOBAL_SERVER_ID) ? data : data?.map(m => m.profiles);
+    users?.forEach(u => {
+        const div = document.createElement('div'); div.className = 'member-item';
+        div.innerHTML = `<div class="pfp-container" style="width:24px;height:24px;"><img src="${u.pfp}" class="pfp-img circle"></div><span>${u.username}</span>`;
+        container.appendChild(div);
+    });
 }
 
-// Extra helper functions for Profile/General stay the same...
+async function loadDMList() { 
+    const { data } = await _supabase.from('friends').select('*, sender:profiles!friends_sender_id_fkey(*), receiver:profiles!friends_receiver_id_fkey(*)').eq('status', 'accepted').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`); 
+    data?.forEach(rel => { 
+        const f = rel.sender_id === currentUser.id ? rel.receiver : rel.sender; 
+        const div = document.createElement('div'); div.className = 'friend-item'; 
+        div.innerHTML = `<div class="pfp-container" style="width:24px;height:24px;margin-right:10px;"><img src="${f.pfp}" class="pfp-img circle"></div><span>${f.username}</span>`; 
+        div.onclick = () => { activeChatID = f.id; chatType = 'dm'; loadMessages(); document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active-chat')); div.classList.add('active-chat'); }; 
+        document.getElementById('sidebar-content').appendChild(div); 
+    }); 
+}
+
 async function ensureGlobalGeneralChannel() { 
     const { data: existing } = await _supabase.from('channels').select('id').eq('server_id', GLOBAL_SERVER_ID).eq('name', 'general').maybeSingle(); 
-    if (!existing) { await _supabase.from('channels').insert({ server_id: GLOBAL_SERVER_ID, name: 'general' }); } 
+    if (!existing) await _supabase.from('channels').insert({ server_id: GLOBAL_SERVER_ID, name: 'general' }); 
+}
+
+function setupRealtime() { 
+    _supabase.channel('public-chat') 
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadMessages()) 
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => setView('dm')) 
+        .subscribe(); 
 }
