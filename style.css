@@ -1,5 +1,5 @@
 /**
- * AeroSocial Pro v3.2 - Final Fixed CSS
+ * AeroSocial Pro v3.3 - Stable Layout & UI Fixes
  */
 
 :root {
@@ -7,7 +7,7 @@
     --text-main: #ffffff;
     --glass: rgba(255, 255, 255, 0.05);
     --blur: blur(25px);
-    --bg-dark: #121218;
+    --bg-dark: #0a0a0f;
 }
 
 * { box-sizing: border-box; }
@@ -20,43 +20,43 @@ body, html {
     overflow: hidden;
 }
 
-/* --- MAIN LAYOUT --- */
+/* --- MAIN LAYOUT ENGINE --- */
 .app-container {
     display: flex;
     height: 100vh;
     width: 100vw;
-    background: linear-gradient(145deg, #1e1e2f 0%, #121218 100%);
+    background: linear-gradient(145deg, #161625 0%, #0a0a0f 100%);
 }
 
 /* Lane 1: Server Rail */
 .server-rail {
     width: 72px;
     flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 15px 0;
     gap: 12px;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Lane 2 & 4: Glass Sidebars */
+/* Lane 2 & 4: Sidebar Panels */
 .sidebar-glass {
     width: 240px;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: var(--blur);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
 }
 
 .member-sidebar {
-    width: 220px;
+    width: 200px;
     border-right: none;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
-    display: none; /* Controlled by setView in JS */
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    display: none; /* Controlled by JS view logic */
 }
 
 /* Lane 3: Chat Area */
@@ -64,157 +64,160 @@ body, html {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.1);
-    min-width: 0; /* Critical fix for layout wonkiness */
+    background: rgba(0, 0, 0, 0.2);
+    min-width: 0; /* Prevents layout breaking from long text */
 }
 
+/* --- CHAT & MESSAGES --- */
 #chat-messages {
     flex-grow: 1;
     overflow-y: auto;
     padding: 20px;
     display: flex;
     flex-direction: column;
+    gap: 15px;
+}
+
+.message-bubble {
+    display: flex;
     gap: 12px;
+    max-width: 85%;
 }
 
-/* --- COMPONENTS --- */
-
-/* Headers & Bars */
-header, .user-bar {
-    padding: 15px;
-    background: rgba(0,0,0,0.15);
-    border-bottom: 1px solid rgba(255,255,255,0.03);
+.message-bubble.own {
+    align-self: flex-end;
+    flex-direction: row-reverse;
 }
 
-.user-bar {
-    border-bottom: none;
-    border-top: 1px solid rgba(255,255,255,0.03);
+.msg-content {
+    background: rgba(255, 255, 255, 0.07);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.own .msg-content {
+    background: var(--accent);
+}
+
+/* Delete Message Button */
+.del-btn {
+    color: #ff4d4d;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 8px;
+    opacity: 0;
+}
+.message-bubble:hover .del-btn { opacity: 1; }
+
+/* --- SIDEBAR COMPONENTS --- */
+.friend-item, .member-item {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 14px;
+    border-radius: 8px;
+    margin: 2px 8px;
 }
+
+.friend-item:hover, .member-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.active-chat {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --- UI ELEMENTS --- */
+.user-bar {
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.signout-btn {
+    font-size: 10px;
+    color: #ff4d4d;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.7;
+}
+
+.signout-btn:hover { opacity: 1; }
 
 /* Status Indicators */
 .status-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    display: inline-block;
 }
-.status-online { background: #23a55a; box-shadow: 0 0 8px rgba(35, 165, 90, 0.5); }
+.status-online { background: #23a55a; box-shadow: 0 0 8px rgba(35, 165, 90, 0.4); }
 .status-offline { background: #80848e; }
 
-/* Member List Items */
-#member-list-container {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 10px 0;
-}
-
-.member-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 15px;
-    transition: background 0.2s;
-}
-.member-item:hover { background: rgba(255, 255, 255, 0.05); }
-
-/* Input Styling */
-.input-wrapper {
-    padding: 20px;
-    background: rgba(0,0,0,0.2);
-    display: flex;
-    gap: 10px;
-}
-
-#chat-in {
-    flex-grow: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    border-radius: 8px;
-    color: white;
-    outline: none;
-}
-
-/* --- AUTH & MODAL SYSTEM (The Layer Fix) --- */
-
-/* The Login Screen - Must be top layer */
+/* --- AUTH & MODAL SYSTEM (Layer Fixes) --- */
 #auth-overlay {
     position: fixed;
     inset: 0;
-    background: #121218;
-    backdrop-filter: blur(10px);
+    background: #0a0a0f;
+    z-index: 10000; /* Highest layer */
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000; /* Highest priority */
 }
 
-/* The Server Modal - Below Auth, Above App */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: none; /* Hidden by default */
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 5000; /* Below login, above app */
+    display: none;
     align-items: center;
     justify-content: center;
-    z-index: 5000; /* Secondary priority */
 }
 
 .glass-panel {
-    background: rgba(30, 30, 45, 0.95);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(25, 25, 35, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 30px;
     border-radius: 20px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     text-align: center;
     min-width: 320px;
 }
 
-/* Buttons */
+.input-box {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
 .aero-btn {
     background: var(--accent);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
     cursor: pointer;
-    font-weight: 600;
-}
-
-/* Delete button styling */
-.del-btn {
-    margin-left: 8px;
-    cursor: pointer;
-    color: #ff4d4d;
-    font-size: 14px;
-    opacity: 0;
     transition: 0.2s;
 }
-.message-bubble:hover .del-btn { opacity: 1; }
 
-.msg-meta { font-size: 11px; font-weight: bold; opacity: 0.5; margin-bottom: 4px; display: block; }
-
-/* QOL Sidebar Buttons */
-.add-channel-btn {
-    font-weight: bold;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 10px;
-}
-
-.signout-btn {
-    cursor: pointer;
-    font-size: 10px;
-    padding: 4px 8px;
-    background: rgba(255,0,0,0.1);
-    border-radius: 4px;
-    margin-left: auto;
-}
-.signout-btn:hover { background: rgba(255,0,0,0.3); }
+.aero-btn:hover { filter: brightness(1.2); }
 
 /* --- SCROLLBARS --- */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
