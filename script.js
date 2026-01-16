@@ -489,25 +489,39 @@ async function deleteServer() {
         location.reload();
     }
 }
-async function loadChannels(serverId) {
-    const { data } = await _supabase.from('channels').select('*').eq('server_id', serverId);
-    const content = document.getElementById('sidebar-content');
 
-    // Add "Invite" button at top of channel list
+async function loadChannels(serverId) {
+    const content = document.getElementById('sidebar-content');
+    
+    // 1. CLEAR the sidebar so old buttons don't stay there
+    content.innerHTML = ''; 
+
+    const { data, error } = await _supabase.from('channels')
+        .select('*')
+        .eq('server_id', serverId);
+
+    if (error) return console.error(error);
+
+    // 2. Add the "Invite" button (only once now)
     const inviteBtn = document.createElement('div');
     inviteBtn.className = 'friend-item';
     inviteBtn.style.color = 'var(--accent)';
     inviteBtn.innerHTML = `<strong>+ Copy Server ID</strong>`;
     inviteBtn.onclick = () => {
         navigator.clipboard.writeText(serverId);
-        alert("Server ID copied to clipboard! Send this to friends.");
+        alert("Server ID copied! Send this to friends.");
     };
     content.appendChild(inviteBtn);
 
+    // 3. Add the actual channels
     data?.forEach(ch => {
         const div = document.createElement('div');
         div.className = 'friend-item';
         div.innerText = `# ${ch.name}`;
+        
+        // Highlight active channel
+        if (activeChatID === ch.id) div.classList.add('active-chat');
+
         div.onclick = () => {
             activeChatID = ch.id;
             chatType = 'server';
