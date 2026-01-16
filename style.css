@@ -1,3 +1,4 @@
+/* style.css */
 /* AeroSocial Full Stylesheet */
 :root {
     --accent: #0078d7;
@@ -7,13 +8,11 @@
     --danger: #ff4757;
     --success: #2ed573;
 }
-
 * {
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     transition: all 0.2s ease;
 }
-
 body, html {
     margin: 0;
     padding: 0;
@@ -21,7 +20,6 @@ body, html {
     background: var(--bg-gradient);
     overflow: hidden;
 }
-
 /* Authentication & Modals */
 .overlay {
     position: fixed;
@@ -33,7 +31,6 @@ body, html {
     align-items: center;
     z-index: 9999;
 }
-
 .glass-panel {
     background: var(--glass);
     backdrop-filter: blur(15px);
@@ -42,14 +39,12 @@ body, html {
     padding: 30px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
-
 /* Main Layout */
 .app-container {
     display: flex;
     width: 100vw;
     height: 100vh;
 }
-
 /* Server Rail (Far Left) */
 .server-rail {
     width: 72px;
@@ -61,7 +56,6 @@ body, html {
     gap: 12px;
     border-right: 1px solid var(--border);
 }
-
 .server-icon {
     width: 48px;
     height: 48px;
@@ -75,19 +69,16 @@ body, html {
     background-size: cover;
     background-position: center;
 }
-
 .server-icon:hover {
     border-radius: 15px;
     background-color: var(--accent);
     color: white;
 }
-
 .server-icon.active {
     border-radius: 15px;
     background: var(--accent);
     color: white;
 }
-
 /* Sub-Sidebar (Middle) */
 .sub-sidebar {
     width: 240px;
@@ -96,7 +87,6 @@ body, html {
     flex-direction: column;
     border-right: 1px solid var(--border);
 }
-
 #sidebar-header {
     display: flex;
     justify-content: space-between;
@@ -106,24 +96,20 @@ body, html {
     color: var(--accent);
     border-bottom: 1px solid var(--border);
 }
-
 .settings-gear {
     cursor: pointer;
     font-size: 16px;
     opacity: 0.6;
 }
-
 .settings-gear:hover {
     opacity: 1;
     transform: rotate(90deg);
 }
-
 #sidebar-content {
     flex: 1;
     overflow-y: auto;
     padding: 10px 0;
 }
-
 /* User Profile Bar (Bottom Left) */
 .user-bar {
     padding: 12px;
@@ -134,7 +120,6 @@ body, html {
     cursor: pointer;
     border-top: 1px solid var(--border);
 }
-
 .pfp-img {
     width: 32px;
     height: 32px;
@@ -142,18 +127,15 @@ body, html {
     object-fit: cover;
     background: #eee;
 }
-
 .user-info {
     display: flex;
     flex-direction: column;
     font-size: 13px;
 }
-
 #my-status {
     font-size: 10px;
     color: #2ecc71;
 }
-
 /* Chat Window (Right) */
 .chat-window {
     flex: 1;
@@ -161,7 +143,6 @@ body, html {
     flex-direction: column;
     background: rgba(255, 255, 255, 0.1);
 }
-
 #chat-messages {
     flex: 1;
     padding: 20px;
@@ -170,23 +151,41 @@ body, html {
     flex-direction: column;
     gap: 12px;
 }
-
 .message-bubble {
     display: flex;
     gap: 12px;
     padding: 8px;
     border-radius: 10px;
 }
-
 .message-bubble:hover {
     background: rgba(255, 255, 255, 0.2);
 }
-
+.message-bubble.own {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+.msg-header {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    margin-bottom: 3px;
+}
+.username {
+    font-weight: 600;
+    color: #1e40af;
+}
+.timestamp {
+    font-size: 10px;
+    color: #64748b;
+    opacity: 0.7;
+}
+.msg-content {
+    word-break: break-word;
+}
 .input-area {
     padding: 20px;
     background: rgba(255, 255, 255, 0.2);
 }
-
 /* UI Elements */
 .input-box {
     width: 100%;
@@ -196,7 +195,6 @@ body, html {
     outline: none;
     background: white;
 }
-
 .aero-btn {
     background: var(--accent);
     color: white;
@@ -207,12 +205,10 @@ body, html {
     width: 100%;
     font-weight: bold;
 }
-
 .aero-btn:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
 }
-
 .friend-item {
     display: flex;
     align-items: center;
@@ -222,16 +218,13 @@ body, html {
     border-radius: 8px;
     margin: 2px 8px;
 }
-
 .friend-item:hover {
     background: rgba(255, 255, 255, 0.4);
 }
-
 .active-chat {
     background: rgba(0, 120, 215, 0.15) !important;
     border-left: 4px solid var(--accent);
 }
-
 .mini-btn {
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid var(--border);
@@ -239,7 +232,6 @@ body, html {
     padding: 2px 8px;
     cursor: pointer;
 }
-
 .section-label {
     font-size: 10px;
     font-weight: bold;
@@ -248,7 +240,6 @@ body, html {
     text-transform: uppercase;
     letter-spacing: 1px;
 }
-
 /* Drag & Drop Profile Customization */
 .drop-zone {
     border: 2px dashed var(--accent);
@@ -259,26 +250,21 @@ body, html {
     color: var(--accent);
     font-weight: bold;
 }
-
 .drop-zone.dragover {
     background: rgba(0, 120, 215, 0.1);
     border-color: #2ecc71;
 }
-
 #preview-img {
     border: 3px solid white;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-
 /* Scrollbar styling for a cleaner look */
 ::-webkit-scrollbar {
     width: 6px;
 }
-
 ::-webkit-scrollbar-track {
     background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
