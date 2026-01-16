@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Auth Overlay (login/signup) -->
+    <!-- Auth Overlay -->
     <div id="auth-overlay" class="overlay">
         <div class="glass-panel auth-card">
             <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
@@ -24,21 +24,20 @@
         </div>
     </div>
 
-    <!-- Server Creation Modal -->
+    <!-- Server Creation/Join Modal -->
     <div id="server-modal" class="overlay" style="display:none;">
         <div class="glass-panel" style="width:350px;">
-            <h3>Create a Server</h3>
-            <input type="text" id="server-name-in" placeholder="Server Name" class="input-box">
-            <input type="text" id="server-icon-in" placeholder="Icon URL (Emoji or Image)" class="input-box" style="margin-top:10px;">
+            <h3>Create or Join a Server</h3>
+            <input type="text" id="server-name-in" placeholder="Server Name (to create) or ID (to join)" class="input-box">
+            <input type="text" id="server-icon-in" placeholder="Icon URL (optional)" class="input-box" style="margin-top:10px;">
             <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="aero-btn" onclick="createEmptyServer()">Create</button>
+                <button class="aero-btn" onclick="createOrJoinServer()">Go</button>
                 <button class="aero-btn" style="background:#e74c3c" onclick="document.getElementById('server-modal').style.display='none'">Cancel</button>
             </div>
         </div>
     </div>
-    
- <div class="server-icon add-btn" style="color: #2ecc71;" onclick="createOrJoinServer()">+</div>
-    <!-- Profile Modal (centered pop-up) -->
+
+    <!-- Profile Modal -->
     <div id="profile-modal" class="overlay" style="display:none;">
         <div class="glass-panel profile-modal-content">
             <div class="modal-header">
@@ -57,7 +56,7 @@
                 <label>Display Name</label>
                 <input type="text" id="edit-username" class="input-box">
                 <label>Profile Picture URL</label>
-                <input type="text" id="edit-pfp-url" class="input-box" placeholder="https://... or leave empty for random">
+                <input type="text" id="edit-pfp-url" class="input-box" placeholder="https://... or leave empty">
                 <div class="edit-buttons">
                     <button class="aero-btn" onclick="saveProfileChanges()">Save Changes</button>
                     <button class="aero-btn cancel" onclick="closeProfileModal()">Cancel</button>
@@ -66,9 +65,9 @@
         </div>
     </div>
 
-    <!-- Main App Layout -->
+    <!-- Main App -->
     <div class="app-container">
-        <!-- Leftmost: Server icons / DM / Friends -->
+        <!-- Server Rail -->
         <nav class="server-rail">
             <div class="server-icon active" id="nav-dm" onclick="setView('dm')">✉️</div>
             <div class="server-icon" id="nav-friends" onclick="setView('friends')">👥</div>
@@ -77,12 +76,12 @@
             <div class="server-icon add-btn" style="color: #2ecc71;" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
         </nav>
 
-        <!-- Middle: Sub-sidebar (channels, friends list, etc.) -->
+        <!-- Sub-Sidebar -->
         <aside class="sub-sidebar">
             <div id="sidebar-header">Direct Messages</div>
             <div id="sidebar-content"></div>
 
-            <!-- Profile bar – fixed at bottom -->
+            <!-- Fixed User Bar at Bottom -->
             <div class="user-bar">
                 <img id="my-pfp" src="" class="pfp-img" onclick="showProfile(currentUser?.id)">
                 <div class="user-info" onclick="showProfile(currentUser?.id)">
@@ -92,7 +91,7 @@
             </div>
         </aside>
 
-        <!-- Right: Chat area -->
+        <!-- Chat Window -->
         <main class="chat-window">
             <div id="chat-messages"></div>
             <div class="input-area">
@@ -102,7 +101,6 @@
         </main>
     </div>
 
-    <!-- Load Supabase + your script -->
     <script src="script.js"></script>
 </body>
 </html>
