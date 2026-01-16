@@ -68,18 +68,37 @@ async function loadPendingRequests() {
 // --- SERVER SETTINGS & DELETE ---
 async function openServerSettings(serverId) {
     const { data: server } = await _supabase.from('servers').select('*').eq('id', serverId).single();
-    if (server.owner_id !== currentUser.id) return alert("Only the owner can access settings.");
-
-    const choice = confirm(`Server Settings for ${server.name}\n\nWould you like to DELETE this server? This cannot be undone.`);
-    if (choice) {
-        const confirmName = prompt(`Type the server name "${server.name}" to confirm deletion:`);
-        if (confirmName === server.name) {
-            await _supabase.from('servers').delete().eq('id', serverId);
-            alert("Server deleted.");
-            location.reload();
+    
+    if (server.owner_id === currentUser.id) {
+        // OWNER OPTIONS: Delete
+        const choice = confirm(`Server: ${server.name}\n\nYou are the Owner. Do you want to DELETE this server?`);
+        if (choice) {
+            const confirmName = prompt(`Type "${server.name}" to confirm deletion:`);
+            if (confirmName === server.name) {
+                await _supabase.from('servers').delete().eq('id', serverId);
+                alert("Server deleted.");
+                location.reload();
+            }
+        }
+    } else {
+        // MEMBER OPTIONS: Leave
+        const choice = confirm(`Server: ${server.name}\n\nDo you want to LEAVE this server?`);
+        if (choice) {
+            const { error } = await _supabase.from('server_members')
+                .delete()
+                .eq('server_id', serverId)
+                .eq('user_id', currentUser.id);
+            
+            if (!error) {
+                alert("You left the server.");
+                location.reload();
+            } else {
+                alert("Error leaving server.");
+            }
         }
     }
 }
+
 
 // --- CORE FUNCTIONALITY (Updated) ---
 async function loadChannels(serverId) {
