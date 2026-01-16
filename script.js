@@ -1,6 +1,6 @@
 /**
- * AeroSocial Pro v3.6 - Final Unified Script
- * Features: Auto-General Channel, Circle PFPs, Message Deletion, Real-time Sync
+ * AeroSocial Pro v3.7 - Final Unified Script
+ * Fixes: Auto-Channel Creation, Image Scaling, Circle PFP logic, Real-time Sync
  */
 
 const SB_URL = 'https://nrpiojdaltgfgswvhrys.supabase.co';
@@ -61,7 +61,6 @@ async function handleAuth() {
                 username, 
                 pfp: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}` 
             }]);
-            alert("Account created! Logging in...");
             location.reload();
         }
     }
@@ -79,7 +78,7 @@ function toggleAuthMode() {
 }
 
 // ────────────────────────────────────────────────
-// 2. SERVER & CHANNEL MANAGEMENT (FIXED)
+// 2. SERVER & CHANNEL MANAGEMENT
 // ────────────────────────────────────────────────
 
 async function createOrJoinServer() {
@@ -87,20 +86,20 @@ async function createOrJoinServer() {
     if (!name) return;
 
     if (name.includes('-')) {
-        // Joining via ID
+        // Joining via UUID
         await _supabase.from('server_members').insert([{ server_id: name, user_id: currentUser.id }]);
     } else {
-        // 1. Create Server Entry
+        // 1. Create Server
         const { data: server, error: sError } = await _supabase.from('servers').insert([
             { name: name, icon: '🌐', owner_id: currentUser.id }
         ]).select().single();
 
         if (sError) return alert(sError.message);
 
-        // 2. Automatically Join the creator
+        // 2. Join Owner to Server
         await _supabase.from('server_members').insert([{ server_id: server.id, user_id: currentUser.id }]);
 
-        // 3. CREATE THE #GENERAL CHANNEL IMMEDIATELY
+        // 3. Create Default #general Channel
         await _supabase.from('channels').insert([{ server_id: server.id, name: 'general' }]);
     }
     document.getElementById('server-modal').style.display = 'none';
@@ -127,7 +126,7 @@ async function loadChannels(serverId, autoSelect = false) {
 }
 
 // ────────────────────────────────────────────────
-// 3. CHAT SYSTEM & UI RENDERING
+// 3. CHAT ENGINE
 // ────────────────────────────────────────────────
 
 function appendMessageUI(msg) {
@@ -189,7 +188,7 @@ async function deleteMessage(id) {
 }
 
 // ────────────────────────────────────────────────
-// 4. NAVIGATION & VIEW LOGIC
+// 4. NAVIGATION & LISTS
 // ────────────────────────────────────────────────
 
 function setView(view, id = null) {
@@ -239,7 +238,12 @@ async function loadServerMembers(serverId) {
     users?.forEach(u => {
         const div = document.createElement('div');
         div.className = 'member-item';
-        div.innerHTML = `<div class="pfp-container" style="width:24px; height:24px;"><img src="${u.pfp}" class="pfp-img circle"></div><span>${u.username}</span>`;
+        div.innerHTML = `
+            <div class="pfp-container" style="width:24px; height:24px;">
+                <img src="${u.pfp}" class="pfp-img circle">
+            </div>
+            <span>${u.username}</span>
+        `;
         container.appendChild(div);
     });
 }
@@ -252,7 +256,12 @@ async function loadDMList() {
         const f = rel.sender_id === currentUser.id ? rel.receiver : rel.sender;
         const div = document.createElement('div');
         div.className = 'friend-item';
-        div.innerHTML = `<div class="pfp-container" style="width:24px; height:24px;"><img src="${f.pfp}" class="pfp-img circle"></div><span>${f.username}</span>`;
+        div.innerHTML = `
+            <div class="pfp-container" style="width:24px; height:24px; margin-right:10px;">
+                <img src="${f.pfp}" class="pfp-img circle">
+            </div>
+            <span>${f.username}</span>
+        `;
         div.onclick = () => {
             activeChatID = f.id; chatType = 'dm'; loadMessages();
             document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active-chat'));
@@ -263,7 +272,7 @@ async function loadDMList() {
 }
 
 function setupRealtime() {
-    _supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+    _supabase.channel('db-feed').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
         loadMessages();
     }).subscribe();
 }
