@@ -287,3 +287,36 @@ body, html {
     cursor: pointer;
     padding: 0 8px;
 }
+
+/* Windows Aero Glass Effect */
+.glass-panel, .message-bubble {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border-left: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), inset 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.message-bubble {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    max-width: 85%;
+    align-self: flex-start;
+}
+
+/* If the message is yours, align it right and color it blue-glass */
+.message-bubble.is-me {
+    align-self: flex-end;
+    background: rgba(0, 120, 215, 0.2);
+    border: 1px solid rgba(0, 120, 215, 0.3);
+}
+
+.pfp-img {
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
