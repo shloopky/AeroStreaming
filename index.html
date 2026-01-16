@@ -24,6 +24,22 @@
         </div>
     </div>
 
+    <div id="profile-modal" class="overlay" style="display: none;">
+        <div class="glass-panel" style="width: 400px; text-align: center;">
+            <h3>Edit Profile</h3>
+            <div id="drop-zone" class="drop-zone">
+                <p>Drag & Drop Photo<br>or Click to Browse</p>
+                <input type="file" id="file-input" hidden accept="image/*">
+                <img id="preview-img" style="display:none; width:80px; height:80px; border-radius:50%; margin: 10px auto; object-fit: cover;">
+            </div>
+            <input type="text" id="edit-username" placeholder="Username" class="input-box" style="margin: 15px 0;">
+            <div style="display: flex; gap: 10px;">
+                <button class="aero-btn" onclick="saveProfile()">Save Changes</button>
+                <button class="aero-btn" style="background: #e74c3c;" onclick="closeProfile()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div id="server-modal" class="overlay" style="display:none;">
         <div class="glass-panel" style="width:350px;">
             <h3>Create a Server</h3>
