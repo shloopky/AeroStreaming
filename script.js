@@ -387,32 +387,70 @@ function renderFriendsUI() {
 async function sendFriendRequest() {
     const name = document.getElementById('friend-search').value.trim();
     const msgEl = document.getElementById('friend-msg');
-    if (!name) return;
+    if (!name) {
+        msgEl.innerText = "Enter a username";
+        msgEl.style.color = "orange";
+        return;
+    }
 
-    const { data: target } = await _supabase.from('profiles').select('id').eq('username', name).single();
-    if (!target) {
+    // 1. Find the target user
+    const { data: target, error: userError } = await _supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', name)
+        .single();
+
+    if (userError || !target) {
         msgEl.innerText = "User not found";
         msgEl.style.color = "red";
         return;
     }
 
-    const { error } = await _supabase.from('friends').insert([{
+    // 2. Optional: prevent self-request
+    if (target.id === currentUser.id) {
+        msgEl.innerText = "You can't add yourself";
+        msgEl.style.color = "orange";
+        return;
+    }
+
+    // 3. Check if relationship already exists (pending / accepted / denied)
+    const { data: existing } = await _supabase
+        .from('friends')
+        .select('status')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${target.id}),and(sender_id.eq.${target.id},receiver_id.eq.${currentUser.id})`)
+        .maybeSingle();  // returns one row or null
+
+    if (existing) {
+        if (existing.status === 'pending') {
+            msgEl.innerText = "Request already pending";
+        } else if (existing.status === 'accepted') {
+            msgEl.innerText = "You're already friends";
+        } else {
+            msgEl.innerText = "Request was previously denied";
+        }
+        msgEl.style.color = "orange";
+        return;
+    }
+
+    // 4. Actually send the request
+    const { error: insertError } = await _supabase.from('friends').insert([{
         sender_id: currentUser.id,
         receiver_id: target.id,
         status: 'pending'
     }]);
 
-    msgEl.innerText = error ? "Already sent or error" : "Request sent!";
-    msgEl.style.color = error ? "orange" : "green";
-}
-
-async function respondFriend(id, status) {
-    if (status === 'denied') {
-        await _supabase.from('friends').delete().eq('id', id);
+    if (insertError) {
+        console.error(insertError);
+        if (insertError.code === '23505') {  // unique violation
+            msgEl.innerText = "Request already exists (possible race condition)";
+        } else {
+            msgEl.innerText = "Error sending request";
+        }
+        msgEl.style.color = "red";
     } else {
-        await _supabase.from('friends').update({ status }).eq('id', id);
+        msgEl.innerText = "Friend request sent!";
+        msgEl.style.color = "green";
     }
-    setView('friends');
 }
 
 async function loadChannels(serverId) {
