@@ -1,4 +1,4 @@
-/* AeroSocial — Original Aero Colors + Frutiger Smooth Hovers & Animations */
+/* AeroSocial — Full CSS (Original Aero Colors + Smooth Frutiger Hovers) */
 
 :root {
     --accent:          #0078d7;           /* classic Aero blue */
@@ -32,7 +32,7 @@ body, html {
     overflow: hidden;
 }
 
-/* Glass panels — original Aero feel */
+/* Glass panels — classic Aero effect */
 .glass-panel,
 .overlay .glass-panel {
     background: var(--glass);
@@ -50,7 +50,7 @@ body, html {
     height: 100vh;
 }
 
-/* Server rail — kept original colors */
+/* Server rail (leftmost) */
 .server-rail {
     width: 78px;
     background: rgba(255,255,255,0.25);
@@ -93,7 +93,7 @@ body, html {
     box-shadow: 0 12px 40px var(--accent-glow);
 }
 
-/* Sub-sidebar */
+/* Sub-sidebar (middle) */
 .sub-sidebar {
     width: 260px;
     background: rgba(255,255,255,0.38);
@@ -101,6 +101,8 @@ body, html {
     border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
+    position: relative;
+    height: 100vh;
 }
 
 #sidebar-header {
@@ -109,20 +111,59 @@ body, html {
     font-weight: 600;
     color: var(--accent);
     border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+}
+
+#sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+/* User bar — fixed/sticky at bottom */
+.user-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,0.45);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--glass-border);
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-}
-
-.settings-gear {
+    gap: 12px;
+    z-index: 10;
+    flex-shrink: 0;
     cursor: pointer;
-    font-size: 18px;
-    transition: transform 0.4s ease;
+    transition: background 0.3s;
 }
 
-.settings-gear:hover {
-    transform: rotate(90deg) scale(1.2);
-    color: var(--accent-light);
+.user-bar:hover {
+    background: rgba(255,255,255,0.6);
+}
+
+.user-bar .pfp-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+}
+
+#my-name {
+    font-weight: 600;
+}
+
+#my-status {
+    font-size: 11px;
+    color: var(--success);
 }
 
 /* Chat window */
@@ -142,7 +183,7 @@ body, html {
     gap: 16px;
 }
 
-/* Original Aero message bubbles + smooth hover */
+/* Message bubbles — classic Aero + smooth hover */
 .message-bubble {
     display: flex;
     align-items: flex-start;
@@ -190,7 +231,7 @@ body, html {
     transform: scale(1.18);
 }
 
-/* Input area — original focus glow */
+/* Input area */
 .input-area {
     padding: 16px 24px;
     background: rgba(255,255,255,0.28);
@@ -213,7 +254,7 @@ body, html {
     box-shadow: 0 0 0 3px rgba(0,120,215,0.2);
 }
 
-/* Buttons — original Aero blue + bouncy hover */
+/* Buttons */
 .aero-btn {
     background: var(--accent);
     color: white;
@@ -231,7 +272,7 @@ body, html {
     box-shadow: 0 12px 36px var(--accent-glow);
 }
 
-/* Friend items & pending buttons */
+/* Friend items & active states */
 .friend-item {
     display: flex;
     align-items: center;
@@ -276,29 +317,19 @@ body, html {
     color: white;
 }
 
-/* User bar (bottom) */
-.user-bar {
-    padding: 16px;
-    background: rgba(255,255,255,0.32);
-    border-top: 1px solid var(--glass-border);
+/* Modals & overlays — centered pop-ups */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    transition: background 0.3s;
+    justify-content: center;
+    z-index: 9999;
 }
 
-.user-bar:hover {
-    background: rgba(255,255,255,0.5);
-}
-
-#my-status {
-    font-size: 12px;
-    color: var(--success);
-    font-weight: 500;
-}
-
-/* Scrollbar — matches accent */
+/* Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -314,11 +345,5 @@ body, html {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-light);
-}
-
-/* Modal / overlay */
-.overlay {
-    background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(12px);
 }
 
