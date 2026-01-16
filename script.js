@@ -9,10 +9,11 @@ const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
 // Global App State
 let currentUser = null;
-let activeChatID = null;   // The ID of the person (DM) or Channel (Server)
+let activeChatID = null;
 let currentServerID = null;
-let chatType = 'dm';       // 'dm' or 'server'
+let chatType = 'dm';
 let lastProfileUpdate = null;
+let isLoginMode = false; // <--- ADD THIS LINE
 
 // Constants
 const PROFILE_COOLDOWN_MINUTES = 20;
