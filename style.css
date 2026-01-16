@@ -288,35 +288,83 @@ body, html {
     padding: 0 8px;
 }
 
-/* Windows Aero Glass Effect */
-.glass-panel, .message-bubble {
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(12px) saturate(150%);
-    -webkit-backdrop-filter: blur(12px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-top: 1px solid rgba(255, 255, 255, 0.6);
-    border-left: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), inset 0 0 10px rgba(255, 255, 255, 0.2);
+/* ────────────────────────────────────────────────
+   Aero / Glassmorphic Message Bubbles
+───────────────────────────────────────────────── */
+
+#chat-messages {
+    padding: 16px 20px;
+    gap: 16px;
 }
 
 .message-bubble {
     display: flex;
+    align-items: flex-start;
     gap: 12px;
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    max-width: 85%;
-    align-self: flex-start;
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+    transition: transform 0.12s ease, box-shadow 0.18s ease;
 }
 
-/* If the message is yours, align it right and color it blue-glass */
-.message-bubble.is-me {
-    align-self: flex-end;
-    background: rgba(0, 120, 215, 0.2);
-    border: 1px solid rgba(0, 120, 215, 0.3);
+.message-bubble:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
 }
 
-.pfp-img {
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.message-bubble.own {
+    flex-direction: row-reverse;
+    margin-left: auto;
+    background: linear-gradient(135deg, #0078d7 0%, #005bb5 100%);
+    color: white;
+    border: none;
+}
+
+.message-bubble.own .msg-header .username {
+    color: white;
+}
+
+.message-bubble.own .msg-header .timestamp {
+    color: rgba(255,255,255,0.7);
+}
+
+.message-bubble .pfp-img {
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.msg-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+
+.username {
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.timestamp {
+    font-size: 11px;
+    color: #6b7280;
+    opacity: 0.8;
+}
+
+.msg-content {
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+/* Make long messages look nicer */
+.message-bubble .msg-content a {
+    color: #60a5fa;
+    text-decoration: underline;
 }
