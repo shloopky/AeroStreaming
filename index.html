@@ -9,7 +9,7 @@
 </head>
 <body>
 
-    <div id="auth-overlay" class="overlay">
+    <div id="auth-overlay">
         <div class="glass-panel auth-box">
             <h2>AeroSocial</h2>
             <div id="signup-fields" style="display:none;">
@@ -24,8 +24,7 @@
 
     <div class="app-container">
         <nav class="server-rail">
-            <div class="server-icon nav-item active" id="nav-dm" onclick="setView('dm')">DM</div>
-            <div class="server-icon nav-item" id="nav-friends" onclick="setView('friends')">👥</div>
+            <div class="server-icon active" onclick="setView('dm')">DM</div>
             <div class="rail-divider"></div>
             <div id="server-list"></div>
             <div class="server-icon add-server" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
@@ -37,7 +36,7 @@
             <footer class="user-bar">
                 <div class="pfp-container">
                     <img id="my-pfp" src="" class="pfp-img circle">
-                    <div class="status-dot status-online border-bg"></div>
+                    <div class="status-dot status-online"></div>
                 </div>
                 <div class="user-info">
                     <span id="my-name">Loading...</span>
@@ -50,7 +49,7 @@
             <div id="chat-messages" class="scrollable"></div>
             <div class="input-wrapper">
                 <input type="text" id="chat-in" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button class="aero-btn send-btn" onclick="sendMessage()">➤</button>
+                <button class="aero-btn" onclick="sendMessage()">➤</button>
             </div>
         </main>
 
