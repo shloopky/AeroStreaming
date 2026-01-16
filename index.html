@@ -11,18 +11,21 @@
 
     <div id="auth-overlay" class="overlay">
         <div class="glass-panel auth-box">
-            <h2>AeroSocial</h2>
+            <h2>AeroSocial Login</h2>
             <div id="signup-fields" style="display:none;">
                 <input type="text" id="username-in" placeholder="Username" class="input-box">
             </div>
-            <input type="email" id="email-in" placeholder="Email" class="input-box">
+            <input type="email" id="email-in" placeholder="Email Address" class="input-box">
             <input type="password" id="pass-in" placeholder="Password" class="input-box">
-            <button id="auth-main-btn" class="aero-btn" onclick="handleAuth()">Login</button>
-            <p onclick="toggleAuthMode()" style="cursor:pointer; font-size:12px; margin-top:15px; opacity:0.7;">Switch Login/Signup</p>
+            <button id="auth-main-btn" class="aero-btn" style="width:100%; margin-top:10px;" onclick="handleAuth()">Login</button>
+            <p onclick="toggleAuthMode()" style="cursor:pointer; font-size:12px; margin-top:15px; opacity:0.7; text-decoration: underline;">
+                Switch Login/Signup
+            </p>
         </div>
     </div>
 
     <div class="app-container">
+        
         <nav class="server-rail">
             <div class="server-icon nav-item" id="nav-dm" onclick="setView('dm')" title="Direct Messages">DM</div>
             <div class="server-icon nav-item" id="nav-friends" onclick="setView('friends')" title="Friends">👥</div>
@@ -33,21 +36,25 @@
 
         <aside class="sidebar-glass">
             <header id="sidebar-header">Direct Messages</header>
-            <div id="sidebar-content"></div>
-            <div class="user-bar">
+            <div id="sidebar-content" style="flex: 1; overflow-y: auto;"></div>
+            
+            <footer class="user-bar">
                 <div style="position: relative;">
                     <img id="my-pfp" src="" class="pfp-img" style="width: 32px; height: 32px;">
-                    <div class="status-dot status-online" style="position: absolute; bottom: 0; right: 0; width: 8px; height: 8px; border: 2px solid #2a2a40;"></div>
+                    <div class="status-dot status-online" style="position: absolute; bottom: 0; right: 0; width: 8px; height: 8px; border: 2px solid #1e1e2f;"></div>
                 </div>
-                <span id="my-name" style="font-size: 13px; font-weight: 500;">Loading...</span>
-            </div>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="my-name" style="font-size: 13px; font-weight: 500;">Loading...</span>
+                    <span class="signout-btn" onclick="signOut()">Sign Out</span>
+                </div>
+            </footer>
         </aside>
 
         <main class="chat-area">
             <div id="chat-messages"></div>
             <div class="input-wrapper">
                 <input type="text" id="chat-in" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button class="send-btn" onclick="sendMessage()">➤</button>
+                <button class="aero-btn" onclick="sendMessage()">➤</button>
             </div>
         </main>
 
@@ -61,8 +68,8 @@
         <div class="glass-panel modal-content" onclick="event.stopPropagation()">
             <h3>Create or Join Server</h3>
             <p style="font-size: 12px; opacity: 0.7; margin-bottom: 15px;">Enter a name to create, or a Server ID to join.</p>
-            <input type="text" id="server-name-in" placeholder="Server Name or ID" class="input-box">
-            <button class="aero-btn" onclick="createOrJoinServer()">Confirm</button>
+            <input type="text" id="server-name-in" placeholder="Server Name or ID" class="input-box" style="margin-bottom: 10px; width: 100%;">
+            <button class="aero-btn" style="width: 100%;" onclick="createOrJoinServer()">Confirm</button>
         </div>
     </div>
 
