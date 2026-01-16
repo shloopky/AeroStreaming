@@ -23,7 +23,36 @@
             </div>
         </div>
     </div>
+    
+<div id="server-settings-modal" class="overlay" style="display:none;">
+    <div class="glass-panel" style="width:400px;">
+        <div class="modal-header">
+            <h3>Server Settings</h3>
+            <button class="close-btn" onclick="closeServerSettings()">×</button>
+        </div>
+        
+        <div class="profile-info">
+            <label>Server Icon URL</label>
+            <input type="text" id="edit-server-icon" class="input-box" placeholder="https://...">
+            <button class="aero-btn" style="margin-top:10px;" onclick="updateServerIcon()">Update Icon</button>
+        </div>
 
+        <hr style="opacity:0.2; margin:20px 0;">
+
+        <div class="profile-info">
+            <label>Create New Channel</label>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="new-channel-name" class="input-box" placeholder="channel-name">
+                <button class="aero-btn" style="width:80px;" onclick="createNewChannel()">Add</button>
+            </div>
+        </div>
+
+        <hr style="opacity:0.2; margin:20px 0;">
+
+        <button class="aero-btn" style="background:#e74c3c" onclick="deleteServer()">Delete Server</button>
+    </div>
+    
+</div>
     <!-- Server Creation/Join Modal -->
     <div id="server-modal" class="overlay" style="display:none;">
         <div class="glass-panel" style="width:350px;">
