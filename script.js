@@ -493,23 +493,19 @@ async function deleteServer() {
 async function loadChannels(serverId) {
     const content = document.getElementById('sidebar-content');
     
-    // 1. CLEAR the sidebar so old buttons don't stay there
+    // 1. THIS IS THE FIX: Clear the sidebar before drawing new buttons
     content.innerHTML = ''; 
 
-    const { data, error } = await _supabase.from('channels')
-        .select('*')
-        .eq('server_id', serverId);
+    const { data } = await _supabase.from('channels').select('*').eq('server_id', serverId);
 
-    if (error) return console.error(error);
-
-    // 2. Add the "Invite" button (only once now)
+    // 2. Add the Invite Button (Only once now!)
     const inviteBtn = document.createElement('div');
     inviteBtn.className = 'friend-item';
     inviteBtn.style.color = 'var(--accent)';
     inviteBtn.innerHTML = `<strong>+ Copy Server ID</strong>`;
     inviteBtn.onclick = () => {
         navigator.clipboard.writeText(serverId);
-        alert("Server ID copied! Send this to friends.");
+        alert("Server ID copied!");
     };
     content.appendChild(inviteBtn);
 
@@ -518,10 +514,6 @@ async function loadChannels(serverId) {
         const div = document.createElement('div');
         div.className = 'friend-item';
         div.innerText = `# ${ch.name}`;
-        
-        // Highlight active channel
-        if (activeChatID === ch.id) div.classList.add('active-chat');
-
         div.onclick = () => {
             activeChatID = ch.id;
             chatType = 'server';
