@@ -8,8 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <!-- Auth Overlay (login/signup) -->
     <div id="auth-overlay" class="overlay">
-        <div class="auth-card glass-panel">
+        <div class="glass-panel auth-card">
             <h2 style="color: #0078d7; text-align: center;">AeroSocial</h2>
             <div id="auth-form">
                 <input type="email" id="email-in" placeholder="Email">
@@ -22,6 +23,8 @@
             </div>
         </div>
     </div>
+
+    <!-- Server Creation Modal -->
     <div id="server-modal" class="overlay" style="display:none;">
         <div class="glass-panel" style="width:350px;">
             <h3>Create a Server</h3>
@@ -33,45 +36,38 @@
             </div>
         </div>
     </div>
-    <!-- Profile Modal -->
-<div id="profile-modal" class="overlay" style="display:none;">
-    <div class="glass-panel" style="width:380px; max-width:90%;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 id="profile-title">Profile</h3>
-            <button class="mini-btn" style="font-size:18px;" onclick="closeProfileModal()">×</button>
-        </div>
-        
-        <div style="text-align:center; margin-bottom:20px;">
-            <img id="profile-pfp-large" src="" class="pfp-img" style="width:96px; height:96px; border-radius:50%; border:4px solid white; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
-        </div>
-        
-        <div style="margin-bottom:15px;">
-            <label style="display:block; font-weight:bold; margin-bottom:6px;">Username</label>
-            <input type="text" id="profile-username" class="input-box" readonly>
-        </div>
-        
-        <div id="profile-status-row" style="margin-bottom:20px; font-size:14px; color:#2ecc71;">
-            <strong>Status:</strong> Online
-        </div>
-        
-        <!-- Edit section - only visible when viewing own profile -->
-        <div id="edit-profile-section" style="display:none; border-top:1px solid var(--border); padding-top:20px;">
-            <h4 style="margin:0 0 15px 0; color:var(--accent);">Edit Profile</h4>
-            
-            <label style="display:block; font-weight:bold; margin-bottom:6px;">Display Name</label>
-            <input type="text" id="edit-username" class="input-box" placeholder="New display name">
-            
-            <label style="display:block; font-weight:bold; margin:15px 0 6px 0;">Profile Picture URL</label>
-            <input type="text" id="edit-pfp-url" class="input-box" placeholder="https://... or leave empty for random avatar">
-            
-            <div style="margin-top:20px; display:flex; gap:10px;">
-                <button class="aero-btn" onclick="saveProfileChanges()">Save Changes</button>
-                <button class="aero-btn" style="background:#95a5a6;" onclick="closeProfileModal()">Cancel</button>
+
+    <!-- Profile Modal (centered pop-up) -->
+    <div id="profile-modal" class="overlay" style="display:none;">
+        <div class="glass-panel profile-modal-content">
+            <div class="modal-header">
+                <h3 id="profile-title">Your Profile</h3>
+                <button class="close-btn" onclick="closeProfileModal()">×</button>
+            </div>
+            <img id="profile-pfp-large" src="" class="pfp-large" alt="Profile Picture">
+            <div class="profile-info">
+                <label>Username</label>
+                <input type="text" id="profile-username" readonly>
+                <label>Status</label>
+                <span>Online</span>
+            </div>
+            <div id="edit-profile-section" style="display:none;">
+                <h4>Edit Profile</h4>
+                <label>Display Name</label>
+                <input type="text" id="edit-username" class="input-box">
+                <label>Profile Picture URL</label>
+                <input type="text" id="edit-pfp-url" class="input-box" placeholder="https://... or leave empty for random">
+                <div class="edit-buttons">
+                    <button class="aero-btn" onclick="saveProfileChanges()">Save Changes</button>
+                    <button class="aero-btn cancel" onclick="closeProfileModal()">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Main App Layout -->
     <div class="app-container">
+        <!-- Leftmost: Server icons / DM / Friends -->
         <nav class="server-rail">
             <div class="server-icon active" id="nav-dm" onclick="setView('dm')">✉️</div>
             <div class="server-icon" id="nav-friends" onclick="setView('friends')">👥</div>
@@ -79,28 +75,33 @@
             <div id="server-list"></div>
             <div class="server-icon add-btn" style="color: #2ecc71;" onclick="document.getElementById('server-modal').style.display='flex'">+</div>
         </nav>
-       <aside class="sub-sidebar">
-    <div id="sidebar-header">Direct Messages</div>
-    <div id="sidebar-content">
-        <!-- Friend list, channels, etc. go here – they scroll independently -->
-    </div>
-    
-    <!-- User bar now fixed at bottom -->
-    <div class="user-bar">
-        <img id="my-pfp" src="" class="pfp-img" onclick="showProfile(currentUser.id)">
-        <div class="user-info" onclick="showProfile(currentUser.id)">
-            <span id="my-name">Loading...</span>
-            <span id="my-status">Online</span>
-        </div>
-    </div>
-</aside>
+
+        <!-- Middle: Sub-sidebar (channels, friends list, etc.) -->
+        <aside class="sub-sidebar">
+            <div id="sidebar-header">Direct Messages</div>
+            <div id="sidebar-content"></div>
+
+            <!-- Profile bar – fixed at bottom -->
+            <div class="user-bar">
+                <img id="my-pfp" src="" class="pfp-img" onclick="showProfile(currentUser?.id)">
+                <div class="user-info" onclick="showProfile(currentUser?.id)">
+                    <span id="my-name">Loading...</span>
+                    <span id="my-status">Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right: Chat area -->
         <main class="chat-window">
             <div id="chat-messages"></div>
             <div class="input-area">
-                <input type="text" id="chat-in" class="input-box" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()" autocomplete="off">
+                <input type="text" id="chat-in" class="input-box" placeholder="Message..." 
+                       onkeypress="if(event.key==='Enter') sendMessage()" autocomplete="off">
             </div>
         </main>
     </div>
+
+    <!-- Load Supabase + your script -->
     <script src="script.js"></script>
 </body>
 </html>
