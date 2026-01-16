@@ -120,6 +120,18 @@
             </div>
         </aside>
 
+<div class="content-area" style="display:flex;">
+    <div class="chat-area" style="flex:1; display:flex; flex-direction:column;">
+        <div id="chat-messages" class="messages-container"></div>
+        <div class="input-area">
+             <input type="text" id="chat-in" placeholder="Message...">
+             <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div id="member-list-container" class="member-list">
+        </div>
+</div>
         <!-- Chat Window -->
         <main class="chat-window">
             <div id="chat-messages"></div>
