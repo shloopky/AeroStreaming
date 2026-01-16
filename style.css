@@ -29,3 +29,8 @@ body, html { margin: 0; padding: 0; height: 100vh; background: linear-gradient(1
 #auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
 .section-label { font-size: 10px; font-weight: bold; opacity: 0.5; padding: 10px 20px; text-transform: uppercase; }
 .friend-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; }
+
+.active-chat { background: rgba(0, 120, 215, 0.2) !important; border-left: 3px solid var(--accent); }
+.mini-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 5px; }
+.mini-btn:hover { transform: scale(1.2); }
+#server-list .server-icon { background-size: cover; background-position: center; }
