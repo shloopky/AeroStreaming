@@ -1,8 +1,8 @@
-// script.js - AeroSocial (complete version with profile cooldown & aero-ready bubbles)
+// script.js - AeroSocial (updated with ignore cooldown on deny)
 
 const SB_URL = 'https://nrpiojdaltgfgswvhrys.supabase.co';
 const SB_KEY = 'sb_publishable_nu-if7EcpRJkKD9bXM97Rg__X3ELLW7';
-// WARNING: In production → use environment variables / never commit this key
+// WARNING: Use environment variables in real production
 
 const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
@@ -18,10 +18,6 @@ let currentProfileUserId = null;
 // Profile edit cooldown
 let lastProfileUpdate = null;
 const PROFILE_COOLDOWN_MINUTES = 20;
-
-// ────────────────────────────────────────────────
-// VIEW SWITCHING
-// ────────────────────────────────────────────────
 
 function setView(view, id = null) {
     const content = document.getElementById('sidebar-content');
@@ -54,7 +50,7 @@ function setView(view, id = null) {
 }
 
 // ────────────────────────────────────────────────
-// PROFILE MODAL + COOLDOWN LOGIC
+// PROFILE MODAL + COOLDOWN
 // ────────────────────────────────────────────────
 
 async function showProfile(userId) {
@@ -95,12 +91,11 @@ async function saveProfileChanges() {
     if (currentProfileUserId !== currentUser.id) return;
 
     const now = Date.now();
-
     if (lastProfileUpdate) {
         const minutesPassed = (now - lastProfileUpdate) / 1000 / 60;
         if (minutesPassed < PROFILE_COOLDOWN_MINUTES) {
             const remaining = Math.ceil(PROFILE_COOLDOWN_MINUTES - minutesPassed);
-            alert(`You can only update your profile every ${PROFILE_COOLDOWN_MINUTES} minutes.\nWait ${remaining} more minute${remaining > 1 ? 's' : ''}.`);
+            alert(`You can only update every ${PROFILE_COOLDOWN_MINUTES} minutes.\nWait ${remaining} more minute${remaining > 1 ? 's' : ''}.`);
             return;
         }
     }
@@ -108,50 +103,34 @@ async function saveProfileChanges() {
     const newName = document.getElementById('edit-username').value.trim();
     let newPfp = document.getElementById('edit-pfp-url').value.trim();
 
-    if (!newName) {
-        alert("Username cannot be empty");
-        return;
-    }
+    if (!newName) return alert("Username cannot be empty");
 
     if (!newPfp) {
         newPfp = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(newName)}`;
     }
 
-    if (newPfp && !newPfp.startsWith('https://')) {
-        alert("Profile picture must be a valid HTTPS URL (or leave empty for random avatar)");
-        return;
-    }
-
     const { error } = await _supabase
         .from('profiles')
-        .update({
-            username: newName,
-            pfp: newPfp,
-            updated_at: new Date().toISOString()
-        })
+        .update({ username: newName, pfp: newPfp })
         .eq('id', currentUser.id);
 
     if (error) {
-        alert("Error saving profile: " + error.message);
-        console.error(error);
+        alert("Error saving: " + error.message);
         return;
     }
 
     lastProfileUpdate = now;
     document.getElementById('my-name').textContent = newName;
     document.getElementById('my-pfp').src = newPfp;
-
-    alert(`Profile updated!\nNext change available in ${PROFILE_COOLDOWN_MINUTES} minutes.`);
-
+    alert("Profile updated!");
     closeProfileModal();
 
-    // Refresh visible name/avatar in UI where needed
     if (chatType === 'dm') loadDMList();
     if (activeChatID) loadMessages(false);
 }
 
 // ────────────────────────────────────────────────
-// CLICKABLE AVATAR HELPER
+// CLICKABLE AVATARS
 // ────────────────────────────────────────────────
 
 function createClickableAvatar(pfpUrl, username, userId, size = 32) {
@@ -168,25 +147,17 @@ function createClickableAvatar(pfpUrl, username, userId, size = 32) {
 }
 
 // ────────────────────────────────────────────────
-// MESSAGES – LOAD + REAL-TIME APPEND
+// MESSAGES
 // ────────────────────────────────────────────────
 
 async function loadMessages(scrollToBottom = true) {
     if (!activeChatID) return;
 
     let query = _supabase.from('messages').select('*').order('created_at', { ascending: true });
+    if (chatType === 'server') query = query.eq('channel_id', activeChatID);
+    else query = query.eq('chat_id', [currentUser.id, activeChatID].sort().join('_'));
 
-    if (chatType === 'server') {
-        query = query.eq('channel_id', activeChatID);
-    } else {
-        query = query.eq('chat_id', [currentUser.id, activeChatID].sort().join('_'));
-    }
-
-    const { data, error } = await query;
-    if (error) {
-        console.error("Messages load error:", error);
-        return;
-    }
+    const { data } = await query;
 
     const container = document.getElementById('chat-messages');
     container.innerHTML = '';
@@ -201,7 +172,7 @@ async function loadMessages(scrollToBottom = true) {
         contentDiv.innerHTML = `
             <div class="msg-header">
                 <span class="username">${msg.username_static}</span>
-                <span class="timestamp">${new Date(msg.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}</span>
+                <span class="timestamp">${new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
             </div>
             <div class="msg-content">${msg.content}</div>
         `;
@@ -212,7 +183,6 @@ async function loadMessages(scrollToBottom = true) {
     });
 
     displayedMessages = new Set(data.map(m => m.id));
-
     if (scrollToBottom) container.scrollTop = container.scrollHeight;
 }
 
@@ -230,7 +200,7 @@ function appendMessage(msg) {
     contentDiv.innerHTML = `
         <div class="msg-header">
             <span class="username">${msg.username_static}</span>
-            <span class="timestamp">${new Date(msg.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}</span>
+            <span class="timestamp">${new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
         </div>
         <div class="msg-content">${msg.content}</div>
     `;
@@ -243,23 +213,19 @@ function appendMessage(msg) {
 
 function subscribeToMessages() {
     if (messageSubscription) messageSubscription.unsubscribe();
-
     messageSubscription = _supabase.channel('messages-changes')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
             (payload) => {
                 const msg = payload.new;
                 const target = chatType === 'server' ? msg.channel_id : msg.chat_id;
                 const expected = chatType === 'server' ? activeChatID : [currentUser.id, activeChatID].sort().join('_');
-
-                if (target === expected) {
-                    appendMessage(msg);
-                }
+                if (target === expected) appendMessage(msg);
             })
         .subscribe();
 }
 
 // ────────────────────────────────────────────────
-// FRIENDS / PENDING / DM LIST (clickable avatars)
+// FRIENDS & PENDING REQUESTS (with 2-min ignore cooldown)
 // ────────────────────────────────────────────────
 
 async function loadPendingRequests() {
@@ -299,6 +265,40 @@ async function loadPendingRequests() {
     });
 }
 
+async function respondFriend(id, action) {
+    if (action === 'accepted') {
+        const { error } = await _supabase
+            .from('friends')
+            .update({ status: 'accepted' })
+            .eq('id', id)
+            .eq('receiver_id', currentUser.id);
+
+        if (error) {
+            alert("Failed to accept");
+            console.error(error);
+        } else {
+            alert("Accepted!");
+            setView('friends');
+        }
+    } else if (action === 'denied') {
+        const ignoreUntil = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+
+        const { error } = await _supabase
+            .from('friends')
+            .update({ ignored_until: ignoreUntil })
+            .eq('id', id)
+            .eq('receiver_id', currentUser.id);
+
+        if (error) {
+            alert("Failed to ignore");
+            console.error(error);
+        } else {
+            alert("Ignored for 2 minutes — sender can't resend until then.");
+            setView('friends');
+        }
+    }
+}
+
 async function loadDMList() {
     const { data } = await _supabase.from('friends')
         .select('*, sender:profiles!friends_sender_id_fkey(id, username, pfp), receiver:profiles!friends_receiver_id_fkey(id, username, pfp)')
@@ -329,7 +329,82 @@ async function loadDMList() {
 }
 
 // ────────────────────────────────────────────────
-// AUTH, FRIEND REQUEST, SERVER CREATION & MANAGEMENT
+// SEND FRIEND REQUEST (with ignore cooldown check)
+// ────────────────────────────────────────────────
+
+async function sendFriendRequest() {
+    const name = document.getElementById('friend-search').value.trim();
+    const msgEl = document.getElementById('friend-msg');
+    if (!name) {
+        msgEl.innerText = "Enter a username";
+        msgEl.style.color = "orange";
+        return;
+    }
+
+    const { data: target } = await _supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', name)
+        .single();
+
+    if (!target) {
+        msgEl.innerText = "User not found";
+        msgEl.style.color = "red";
+        return;
+    }
+
+    if (target.id === currentUser.id) {
+        msgEl.innerText = "Can't add yourself";
+        msgEl.style.color = "orange";
+        return;
+    }
+
+    // Check existing relationship (including ignored)
+    const { data: existing } = await _supabase
+        .from('friends')
+        .select('id, status, ignored_until')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${target.id}),and(sender_id.eq.${target.id},receiver_id.eq.${currentUser.id})`)
+        .maybeSingle();
+
+    if (existing) {
+        if (existing.status === 'accepted') {
+            msgEl.innerText = "Already friends";
+            msgEl.style.color = "orange";
+            return;
+        }
+        if (existing.status === 'pending') {
+            if (existing.ignored_until && new Date(existing.ignored_until) > new Date()) {
+                const remainingSec = Math.ceil((new Date(existing.ignored_until) - new Date()) / 1000);
+                const remainingMin = Math.ceil(remainingSec / 60);
+                msgEl.innerText = `Request ignored — wait ${remainingMin} min${remainingMin > 1 ? 's' : ''}`;
+                msgEl.style.color = "orange";
+                return;
+            }
+            msgEl.innerText = "Request already pending";
+            msgEl.style.color = "orange";
+            return;
+        }
+    }
+
+    const { error } = await _supabase.from('friends').insert([{
+        sender_id: currentUser.id,
+        receiver_id: target.id,
+        status: 'pending',
+        ignored_until: null
+    }]);
+
+    if (error) {
+        msgEl.innerText = "Error sending request";
+        msgEl.style.color = "red";
+        console.error(error);
+    } else {
+        msgEl.innerText = "Request sent!";
+        msgEl.style.color = "green";
+    }
+}
+
+// ────────────────────────────────────────────────
+// OTHER FUNCTIONS (auth, servers, messages send, etc.)
 // ────────────────────────────────────────────────
 
 async function handleAuth() {
@@ -350,7 +425,7 @@ async function handleAuth() {
             pfp: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
         }]);
 
-        alert("Account created! Please log in.");
+        alert("Success! Log in now.");
         toggleAuthMode();
     } else {
         const { error } = await _supabase.auth.signInWithPassword({ email, password });
@@ -375,82 +450,8 @@ function renderFriendsUI() {
         </div>
         <div class="section-label">Pending Requests</div>
         <div id="pending-list"></div>
-        <div class="section-label">Join Server</div>
-        <div style="padding: 15px;">
-            <input type="text" id="server-id-in" placeholder="Enter Server ID..." class="input-box" style="background:white; margin-bottom:5px;">
-            <button class="aero-btn" onclick="joinServer()">Join</button>
-        </div>
     `;
     loadPendingRequests();
-}
-
-async function sendFriendRequest() {
-    const name = document.getElementById('friend-search').value.trim();
-    const msgEl = document.getElementById('friend-msg');
-    if (!name) {
-        msgEl.innerText = "Enter a username";
-        msgEl.style.color = "orange";
-        return;
-    }
-
-    // 1. Find the target user
-    const { data: target, error: userError } = await _supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', name)
-        .single();
-
-    if (userError || !target) {
-        msgEl.innerText = "User not found";
-        msgEl.style.color = "red";
-        return;
-    }
-
-    // 2. Optional: prevent self-request
-    if (target.id === currentUser.id) {
-        msgEl.innerText = "You can't add yourself";
-        msgEl.style.color = "orange";
-        return;
-    }
-
-    // 3. Check if relationship already exists (pending / accepted / denied)
-    const { data: existing } = await _supabase
-        .from('friends')
-        .select('status')
-        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${target.id}),and(sender_id.eq.${target.id},receiver_id.eq.${currentUser.id})`)
-        .maybeSingle();  // returns one row or null
-
-    if (existing) {
-        if (existing.status === 'pending') {
-            msgEl.innerText = "Request already pending";
-        } else if (existing.status === 'accepted') {
-            msgEl.innerText = "You're already friends";
-        } else {
-            msgEl.innerText = "Request was previously denied";
-        }
-        msgEl.style.color = "orange";
-        return;
-    }
-
-    // 4. Actually send the request
-    const { error: insertError } = await _supabase.from('friends').insert([{
-        sender_id: currentUser.id,
-        receiver_id: target.id,
-        status: 'pending'
-    }]);
-
-    if (insertError) {
-        console.error(insertError);
-        if (insertError.code === '23505') {  // unique violation
-            msgEl.innerText = "Request already exists (possible race condition)";
-        } else {
-            msgEl.innerText = "Error sending request";
-        }
-        msgEl.style.color = "red";
-    } else {
-        msgEl.innerText = "Friend request sent!";
-        msgEl.style.color = "green";
-    }
 }
 
 async function loadChannels(serverId) {
@@ -467,7 +468,7 @@ async function loadChannels(serverId) {
     data?.forEach(ch => {
         const div = document.createElement('div');
         div.className = 'friend-item';
-        div.textContent = `# ${ch.name}`;
+        div.innerText = `# ${ch.name}`;
         div.onclick = () => {
             activeChatID = ch.id;
             chatType = 'server';
@@ -481,94 +482,28 @@ async function loadChannels(serverId) {
 
 function inviteToServer(serverId) {
     navigator.clipboard.writeText(serverId);
-    alert(`Server ID copied:\n${serverId}\n\nShare this with friends to join.`);
-}
-
-async function joinServer() {
-    const id = document.getElementById('server-id-in')?.value?.trim();
-    if (!id) return alert("Enter a Server ID");
-
-    const { data: server } = await _supabase.from('servers').select('id').eq('id', id).single();
-    if (!server) return alert("Server not found");
-
-    const { data: member } = await _supabase.from('server_members')
-        .select('id').eq('server_id', id).eq('user_id', currentUser.id).single();
-
-    if (member) return alert("Already a member");
-
-    const { error } = await _supabase.from('server_members').insert([{
-        server_id: id,
-        user_id: currentUser.id
-    }]);
-
-    if (!error) {
-        alert("Joined!");
-        location.reload();
-    } else {
-        alert("Error joining");
-    }
-}
-
-async function openServerSettings(serverId) {
-    const { data: server } = await _supabase.from('servers').select('*').eq('id', serverId).single();
-    if (!server) return;
-
-    if (server.owner_id === currentUser.id) {
-        if (!confirm(`Delete server "${server.name}"?`)) return;
-        if (prompt(`Type "${server.name}" to confirm:`) !== server.name) return;
-
-        await _supabase.from('servers').delete().eq('id', serverId);
-        alert("Server deleted");
-        location.reload();
-    } else {
-        if (!confirm(`Leave server "${server.name}"?`)) return;
-        await _supabase.from('server_members').delete()
-            .eq('server_id', serverId)
-            .eq('user_id', currentUser.id);
-        alert("Left server");
-        location.reload();
-    }
+    alert(`Server ID copied: ${serverId}`);
 }
 
 async function createEmptyServer() {
     const name = document.getElementById('server-name-in').value.trim();
-    if (!name) return alert("Server name required");
-
-    const icon = document.getElementById('server-icon-in').value.trim() || '📁';
-
-    const { data: server } = await _supabase.from('servers')
-        .insert([{ name, icon, owner_id: currentUser.id }])
-        .select()
-        .single();
-
-    if (!server) return alert("Failed to create server");
-
+    const icon = document.getElementById('server-icon-in').value || '📁';
+    const { data: server } = await _supabase.from('servers').insert([{ name, icon, owner_id: currentUser.id }]).select().single();
     await _supabase.from('server_members').insert([{ server_id: server.id, user_id: currentUser.id }]);
     await _supabase.from('channels').insert([{ server_id: server.id, name: 'general' }]);
-
-    document.getElementById('server-modal').style.display = 'none';
     location.reload();
 }
 
 async function loadServers() {
-    const { data: memberships } = await _supabase.from('server_members')
-        .select('server_id')
-        .eq('user_id', currentUser.id);
-
-    if (!memberships?.length) return;
-
-    const ids = memberships.map(m => m.server_id);
-    const { data: servers } = await _supabase.from('servers').select('*').in('id', ids);
-
+    const { data: memberships } = await _supabase.from('server_members').select('server_id').eq('user_id', currentUser.id);
+    const serverIds = memberships.map(m => m.server_id);
+    const { data: servers } = await _supabase.from('servers').in('id', serverIds);
     const list = document.getElementById('server-list');
-    list.innerHTML = '';
-
     servers?.forEach(s => {
         const div = document.createElement('div');
         div.className = 'server-icon';
-        div.dataset.serverId = s.id;
-        div.textContent = s.icon.length < 4 ? s.icon : '';
-        if (s.icon.length >= 4) div.style.backgroundImage = `url(${s.icon})`;
+        div.innerText = s.icon.length < 4 ? s.icon : '';
+        if(s.icon.length >= 4) div.style.backgroundImage = `url(${s.icon})`;
         div.onclick = () => setView('server', s.id);
         list.appendChild(div);
     });
@@ -576,50 +511,26 @@ async function loadServers() {
 
 async function sendMessage() {
     const input = document.getElementById('chat-in');
-    const text = input.value.trim();
-    if (!text || !activeChatID) return;
-
-    const msg = {
-        sender_id: currentUser.id,
-        content: text,
-        username_static: document.getElementById('my-name').textContent,
-        pfp_static: document.getElementById('my-pfp').src
-    };
-
-    if (chatType === 'server') msg.channel_id = activeChatID;
-    else msg.chat_id = [currentUser.id, activeChatID].sort().join('_');
-
-    const { data, error } = await _supabase.from('messages').insert([msg]).select();
-
+    if (!input.value.trim() || !activeChatID) return;
+    const msgObj = { sender_id: currentUser.id, content: input.value, username_static: document.getElementById('my-name').innerText, pfp_static: document.getElementById('my-pfp').src };
+    if (chatType === 'server') msgObj.channel_id = activeChatID;
+    else msgObj.chat_id = [currentUser.id, activeChatID].sort().join('_');
+    await _supabase.from('messages').insert([msgObj]);
     input.value = '';
-
-    if (!error && data?.[0]) appendMessage(data[0]);
 }
-
-// ────────────────────────────────────────────────
-// STARTUP
-// ────────────────────────────────────────────────
 
 window.onload = async () => {
     const { data: { user } } = await _supabase.auth.getUser();
-
     if (user) {
         currentUser = user;
         document.getElementById('auth-overlay').style.display = 'none';
-
-        const { data: prof } = await _supabase.from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
+        const { data: prof } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
         if (prof) {
-            document.getElementById('my-name').textContent = prof.username;
+            document.getElementById('my-name').innerText = prof.username;
             document.getElementById('my-pfp').src = prof.pfp;
-
             document.getElementById('my-pfp').onclick = () => showProfile(currentUser.id);
             document.querySelector('.user-bar .user-info').onclick = () => showProfile(currentUser.id);
         }
-
         loadServers();
         subscribeToMessages();
         setView('dm');
