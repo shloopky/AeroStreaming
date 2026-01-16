@@ -28,6 +28,19 @@
         </div>
     </div>
 
+    <div id="server-settings-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>Server Settings</h3>
+        <input type="text" id="set-server-name" placeholder="Server Name">
+        <input type="text" id="set-server-icon" placeholder="Icon (Emoji or URL)">
+        <div class="modal-actions">
+            <button onclick="saveServerSettings()">Save Changes</button>
+            <button onclick="deleteServer()" class="danger-btn">Delete Server</button>
+            <button onclick="document.getElementById('server-settings-modal').style.display='none'">Cancel</button>
+        </div>
+    </div>
+</div>
+    
     <div class="app-container">
         
         <nav class="server-rail">
