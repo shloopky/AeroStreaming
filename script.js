@@ -232,7 +232,47 @@ async function loadChannels(serverId) {
         content.appendChild(div);
     });
 }
+async function loadServers() {
+    const list = document.getElementById('server-list');
+    list.innerHTML = '';
 
+    // 1. ADD THE GLOBAL SERVER MANUALLY (For everyone)
+    const globalDiv = document.createElement('div');
+    globalDiv.className = 'server-icon global-icon';
+    globalDiv.textContent = '🌎';
+    globalDiv.title = "Global Hub";
+    globalDiv.onclick = () => setView('server', '00000000-0000-0000-0000-000000000000');
+    list.appendChild(globalDiv);
+
+    // 2. LOAD PERSONAL SERVERS
+    const { data: memberships } = await _supabase.from('server_members')
+        .select('server_id')
+        .eq('user_id', currentUser.id);
+
+    if (memberships && memberships.length > 0) {
+        const serverIds = memberships.map(m => m.server_id);
+        const { data: servers } = await _supabase.from('servers').select('*').in('id', serverIds);
+
+        servers?.forEach(s => {
+            // Prevent duplicating the global server if someone joined it manually
+            if (s.id === '00000000-0000-0000-0000-000000000000') return;
+
+            const div = document.createElement('div');
+            div.className = 'server-icon';
+            div.dataset.serverId = s.id;
+            
+            if (s.icon.startsWith('http')) {
+                div.style.backgroundImage = `url(${s.icon})`;
+                div.style.backgroundSize = 'cover';
+            } else {
+                div.textContent = s.icon;
+            }
+
+            div.onclick = () => setView('server', s.id);
+            list.appendChild(div);
+        });
+    }
+}
 // ────────────────────────────────────────────────
 // 6. REMAINING CORE FUNCTIONS (AUTH & SETTINGS)
 // ────────────────────────────────────────────────
