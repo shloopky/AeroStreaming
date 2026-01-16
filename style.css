@@ -34,3 +34,36 @@ body, html { margin: 0; padding: 0; height: 100vh; background: linear-gradient(1
 .mini-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 5px; }
 .mini-btn:hover { transform: scale(1.2); }
 #server-list .server-icon { background-size: cover; background-position: center; }
+
+/* Ensure friend items look consistent */
+.friend-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 12px;
+    margin: 4px 8px;
+    transition: background 0.2s;
+}
+
+.friend-item:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.mini-btn {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.mini-btn:hover {
+    background: white;
+    transform: translateY(-1px);
+}
