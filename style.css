@@ -1,64 +1,143 @@
-/* AERO SOCIAL PRO STYLES */
+/* --- AERO SOCIAL COMPLETE STYLESHEET --- */
+
 :root {
     --accent: #0078d7;
     --accent-hover: #005a9e;
-    --glass-bg: rgba(255, 255, 255, 0.4);
-    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.3);
     --text-main: #1a1a1a;
     --text-muted: #555;
     --blur: blur(15px);
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body, html {
-    margin: 0; padding: 0; height: 100vh;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
     color: var(--text-main);
     overflow: hidden;
 }
 
-/* Layout Structure */
+/* --- APP LAYOUT --- */
+
 .app-container {
     display: flex;
     height: 100vh;
     width: 100vw;
 }
 
-/* Sidebar Styling */
-.sidebar-main {
-    width: 280px;
+/* Server Rail (Far Left) */
+.server-rail {
+    width: 70px;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: var(--blur);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 15px;
+    gap: 12px;
+    border-right: 1px solid var(--glass-border);
+}
+
+.server-icon {
+    width: 48px;
+    height: 48px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background-size: cover;
+    background-position: center;
+}
+
+.server-icon:hover, .server-icon.active {
+    border-radius: 15px;
+    background-color: var(--accent);
+    color: white;
+}
+
+/* Sub-Sidebar (DMs/Channels) */
+.sub-sidebar {
+    width: 260px;
     background: var(--glass-bg);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
-    z-index: 10;
 }
 
-.sidebar-header {
-    padding: 24px 20px;
-    font-size: 1.2rem;
-    font-weight: 700;
+#sidebar-header {
+    padding: 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
     color: var(--accent);
     border-bottom: 1px solid var(--glass-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
-.sidebar-scroll {
+#sidebar-content {
     flex: 1;
     overflow-y: auto;
-    padding: 10px;
 }
 
-/* Chat Area */
+.friend-item {
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.friend-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.friend-item.active-chat {
+    background: rgba(0, 120, 215, 0.1);
+    border-left: 4px solid var(--accent);
+}
+
+/* User Bar (Bottom Left) */
+.user-bar {
+    height: 70px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.3);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+}
+
+#my-status {
+    font-size: 0.75rem;
+    color: #2ecc71;
+}
+
+/* --- CHAT AREA --- */
+
 .chat-window {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 #chat-messages {
@@ -67,15 +146,14 @@ body, html {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
 }
 
-/* Message Bubbles */
 .message-bubble {
     display: flex;
-    gap: 12px;
-    max-width: 80%;
-    animation: fadeIn 0.3s ease;
+    gap: 10px;
+    max-width: 75%;
+    animation: slideUp 0.3s ease;
 }
 
 .message-bubble.own {
@@ -83,74 +161,144 @@ body, html {
     flex-direction: row-reverse;
 }
 
-.pfp-small {
-    width: 40px;
-    height: 40px;
+.pfp-img {
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    cursor: pointer;
+    object-fit: cover;
+    background: #ddd;
 }
 
-.msg-content-wrapper {
+.msg-body {
     background: white;
-    padding: 10px 15px;
+    padding: 10px 14px;
     border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-top-left-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-.own .msg-content-wrapper {
+.own .msg-body {
     background: var(--accent);
     color: white;
-    border-bottom-left-radius: 18px;
-    border-bottom-right-radius: 4px;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 4px;
 }
 
-/* User Bar (Bottom Left) */
-.user-info-bar {
-    padding: 15px;
-    background: rgba(255,255,255,0.3);
-    border-top: 1px solid var(--glass-border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: 0.2s;
+.msg-header {
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-bottom: 4px;
+    opacity: 0.7;
 }
 
-.user-info-bar:hover {
-    background: rgba(255,255,255,0.5);
-    cursor: pointer;
-}
-
-/* Input Area */
-.chat-input-area {
+.input-area {
     padding: 20px;
     background: var(--glass-bg);
     backdrop-filter: var(--blur);
     border-top: 1px solid var(--glass-border);
-    display: flex;
-    gap: 10px;
 }
 
-.aero-input {
-    flex: 1;
-    padding: 12px 18px;
+.input-box {
+    width: 100%;
+    padding: 12px 20px;
     border-radius: 25px;
     border: 1px solid var(--glass-border);
-    background: rgba(255,255,255,0.6);
+    background: rgba(255, 255, 255, 0.7);
     outline: none;
     transition: 0.2s;
 }
 
-.aero-input:focus {
+.input-box:focus {
     background: white;
     border-color: var(--accent);
-    box-shadow: 0 0 10px rgba(0, 120, 215, 0.2);
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
+/* --- OVERLAYS & MODALS --- */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    border: 1px solid white;
+}
+
+.profile-modal-content {
+    width: 380px;
+    text-align: center;
+}
+
+.pfp-large {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 4px solid white;
+    margin: 10px auto;
+    object-fit: cover;
+}
+
+.profile-info {
+    text-align: left;
+    margin: 15px 0;
+}
+
+.profile-info label {
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.profile-info input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    border-bottom: 1px solid #ddd;
+    padding: 5px 0;
+    margin-bottom: 10px;
+    outline: none;
+}
+
+.aero-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    transition: 0.2s;
+}
+
+.aero-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+/* --- ANIMATIONS --- */
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
 }
