@@ -16,8 +16,8 @@ let messageSubscription = null;
 let currentProfileUserId = null;
 let lastProfileUpdate = null;
 
-const PROFILE_COOLDOWN_MINUTES = 20;
-const MAX_WORD_LENGTH = 20;
+const PROFILE_COOLDOWN_MINUTES = 1;
+const MAX_WORD_LENGTH = 30;
 
 // ────────────────────────────────────────────────
 // VIEW CONTROLLER
