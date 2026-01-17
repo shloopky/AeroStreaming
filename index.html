@@ -14,35 +14,35 @@
         <div class="cloud"></div>
     </div>
 
-    <div id="gatekeeper" class="gatekeeper-overlay">
-        <div class="bulky-window auth-window">
-            <div class="window-title">
-                <span>System Access</span>
-                <div class="win-btn red"></div>
+<div id="gatekeeper" class="gatekeeper-overlay">
+    <div class="bulky-window auth-window">
+        <div class="window-title">
+            <span id="auth-title">System Access</span>
+            <div class="win-btn red"></div>
+        </div>
+        <div class="window-body center-body">
+            <div class="logo-glow">
+                <h1 class="aero-logo-text">AeroSocial</h1>
             </div>
-            <div class="window-body center-body">
-                <div class="logo-glow">
-                    <h1 class="aero-logo-text">AeroSocial</h1>
+            <p id="auth-status" class="status-text">Identify yourself to connect.</p>
+            
+            <div class="login-form">
+                <div id="signup-fields" style="display:none;">
+                    <input type="text" id="username-in" placeholder="Choose Username" class="aero-input">
                 </div>
-                <p id="auth-status" class="status-text">Identify yourself to connect.</p>
-                
-                <div class="login-form">
-                    <input type="email" id="email-in" placeholder="Email Address" class="aero-input">
-                    <input type="password" id="pass-in" placeholder="Password" class="aero-input">
-                    
-                    <div id="signup-section" style="display:none; margin-top:10px;">
-                        <input type="text" id="username-in" placeholder="Choose Username" class="aero-input">
-                    </div>
 
-                    <button onclick="handleAuth()" class="gel-button primary" id="main-auth-btn">Log In</button>
-                    
-                    <div class="auth-toggle">
-                        <span id="toggle-text" onclick="toggleMode()">New user? Create Account</span>
-                    </div>
+                <input type="email" id="email-in" placeholder="Email Address" class="aero-input">
+                <input type="password" id="pass-in" placeholder="Password" class="aero-input">
+
+                <button onclick="handleAuth()" class="gel-button primary" id="main-auth-btn">Log In</button>
+                
+                <div class="auth-toggle">
+                    <span id="toggle-text" onclick="toggleAuthMode()">New user? Create Account</span>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <div id="app-root" style="display:none;">
         
