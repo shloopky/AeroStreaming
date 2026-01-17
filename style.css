@@ -1,20 +1,15 @@
-/* --- Core Reset --- */
-* { box-sizing: border-box; }
 body, html {
-    margin: 0; padding: 0;
-    height: 100vh; width: 100vw;
+    margin: 0; height: 100vh;
     font-family: 'Segoe UI', sans-serif;
-    background: #a1c4fd;
-    overflow: hidden; /* Stops scrolling of the whole page */
+    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+    overflow: hidden;
 }
 
-/* --- Layout Engine --- */
 #app-root {
-    display: none; /* Controlled by JS */
+    display: none;
     grid-template-columns: 280px 1fr;
     height: 100vh;
-    padding: 10px;
-    gap: 10px;
+    padding: 10px; gap: 10px;
 }
 
 .bulky-window {
@@ -22,104 +17,56 @@ body, html {
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.6);
     border-radius: 12px;
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* --- GEL BUTTONS (Glossy Blue) --- */
+/* --- GEL BUTTONS --- */
 button, .gel-button {
     background: linear-gradient(to bottom, #7abcff 0%, #60abf8 44%, #4096ee 100%);
     border: 1px solid #1e5799;
-    border-radius: 20px;
-    color: white;
-    padding: 8px 20px;
-    font-weight: bold;
-    cursor: pointer;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.3);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 4px rgba(0,0,0,0.2);
+    border-radius: 20px; color: white;
+    padding: 8px 20px; font-weight: bold; cursor: pointer;
 }
 
-button:hover { filter: brightness(1.1); }
-button:active { transform: translateY(1px); }
-
-/* --- Inputs --- */
-.aero-input {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(0,0,0,0.2);
-    border-radius: 20px;
-    padding: 10px 15px;
-    outline: none;
-    transition: 0.2s;
-}
-.aero-input:focus { border-color: #4096ee; box-shadow: 0 0 5px rgba(64,150,238,0.5); }
-
-/* --- Chat Mechanics (The "Too Low" Fix) --- */
-.chat-area { position: relative; }
-
-.chat-header {
-    padding: 15px;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.3);
-}
-
+/* --- CHAT AREA --- */
 #chat-messages {
-    flex: 1; /* Fills remaining space */
-    overflow-y: auto;
+    flex: 1; /* This pushes the input to the bottom */
     padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+}
+
+.msg-bubble {
+    background: rgba(255,255,255,0.8);
+    padding: 10px; border-radius: 15px; max-width: 70%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.msg-bubble.own {
+    align-self: flex-end;
+    background: #4096ee; color: white;
 }
 
 .chat-input-container {
-    padding: 15px;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    gap: 10px;
-    border-top: 1px solid rgba(255,255,255,0.3);
+    padding: 15px; background: rgba(255,255,255,0.2);
+    display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.3);
 }
 
-#chat-in { flex: 1; }
+.aero-input {
+    flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc;
+}
 
-/* --- Sidebar Footer --- */
+/* --- SIDEBAR & PROFILE TRAY --- */
+.sidebar { display: flex; flex-direction: column; }
+#sidebar-content { flex: 1; }
+
 .user-tray-footer {
-    padding: 15px;
-    background: rgba(255,255,255,0.3);
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    padding: 12px; background: rgba(255, 255, 255, 0.5);
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
 }
+
 #my-pfp { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; }
-.user-info { flex: 1; font-size: 0.9em; }
-
-/* --- Auth Overlay --- */
-.gatekeeper-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-    z-index: 9999;
-}
-.auth-window { width: 350px; padding: 30px; }
-.auth-form { display: flex; flex-direction: column; gap: 15px; }
-.toggle-link { font-size: 0.8em; color: #0056b3; cursor: pointer; text-decoration: underline; }
-
-/* Message Bubbles */
-.msg-bubble {
-    padding: 10px 15px;
-    border-radius: 15px;
-    max-width: 70%;
-    background: white;
-}
-.msg-bubble.own {
-    align-self: flex-end;
-    background: #0078d7;
-    color: white;
-}
+.user-info { flex: 1; }
+#my-display-name { font-size: 14px; font-weight: bold; display: block; }
+#my-full-id { font-size: 11px; color: #555; }
