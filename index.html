@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroSocial Pro | v5.4 Final</title>
+    <title>AeroSocial | System Access</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -15,19 +15,31 @@
     </div>
 
     <div id="gatekeeper" class="gatekeeper-overlay">
-        <div class="bulky-window auth-box">
-            <div class="window-title"><span>System Access</span></div>
+        <div class="bulky-window auth-window">
+            <div class="window-title">
+                <span>System Access</span>
+                <div class="win-btn red"></div>
+            </div>
             <div class="window-body center-body">
-                <h1 class="logo-text">AeroSocial</h1>
-                <p class="status-text" id="auth-msg">Identification Required</p>
+                <div class="logo-glow">
+                    <h1 class="aero-logo-text">AeroSocial</h1>
+                </div>
+                <p id="auth-status" class="status-text">Identify yourself to connect.</p>
                 
-                <div class="input-stack">
+                <div class="login-form">
                     <input type="email" id="email-in" placeholder="Email Address" class="aero-input">
                     <input type="password" id="pass-in" placeholder="Password" class="aero-input">
-                    <input type="text" id="username-in" placeholder="Choose Username (New Users)" class="aero-input">
-                </div>
+                    
+                    <div id="signup-section" style="display:none; margin-top:10px;">
+                        <input type="text" id="username-in" placeholder="Choose Username" class="aero-input">
+                    </div>
 
-                <button onclick="handleAuth()" class="gel-button primary">Initialize Session</button>
+                    <button onclick="handleAuth()" class="gel-button primary" id="main-auth-btn">Log In</button>
+                    
+                    <div class="auth-toggle">
+                        <span id="toggle-text" onclick="toggleMode()">New user? Create Account</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -39,24 +51,23 @@
                 <img src="https://img.icons8.com/fluency/48/home.png">
             </div>
             <div class="dock-sep"></div>
-            <div id="server-list"></div>
-            <button class="dock-icon add-btn" onclick="openModal('create-group-modal')">+</button>
+            <button class="dock-icon add-btn" onclick="openModal('friend-req-modal')">+</button>
         </nav>
 
         <aside class="bulky-window sidebar">
             <div class="window-title"><span>Global Hub</span></div>
-            
             <div class="window-tabs">
                 <button id="tab-friends" onclick="setView('dm')" class="tab active">Friends</button>
                 <button id="tab-groups" onclick="setView('group')" class="tab">Groups</button>
             </div>
-            
-            <div id="sidebar-content" class="window-scroll"></div>
+            <div id="sidebar-content" class="window-scroll">
+                <div class="loader">Scanning...</div>
+            </div>
             
             <div class="user-tray" onclick="openModal('profile-modal')">
                 <img id="my-pfp" src="" class="gel-pfp">
                 <div class="user-details">
-                    <b id="my-display-name">Loading...</b>
+                    <b id="my-display-name">Guest</b>
                     <span id="my-full-id">#0000</span>
                 </div>
                 <button class="gear-btn">⚙️</button>
@@ -66,15 +77,12 @@
         <main class="bulky-window chat-engine">
             <div class="window-title">
                 <span id="active-chat-title">Secure Connection</span>
-                <div class="window-controls">
-                    <button class="ctrl-btn" onclick="openModal('friend-req-modal')">Add Friend</button>
-                    <button class="ctrl-btn danger" onclick="logout()">Logout</button>
-                </div>
+                <button class="ctrl-btn danger" onclick="logout()">Disconnect</button>
             </div>
             <div id="chat-messages" class="window-scroll"></div>
             <div class="chat-footer">
                 <div class="input-wrapper">
-                    <input type="text" id="chat-in" placeholder="Transmit Message..." onkeydown="if(event.key==='Enter') sendMessage()">
+                    <input type="text" id="chat-in" placeholder="Transmit..." onkeydown="if(event.key==='Enter') sendMessage()">
                     <button onclick="sendMessage()" class="send-btn">Send</button>
                 </div>
             </div>
@@ -83,22 +91,21 @@
 
     <div id="profile-modal" class="modal-overlay" style="display:none;">
         <div class="bulky-window modal-content">
-            <div class="window-title">Profile Data <button onclick="closeModal('profile-modal')" class="close-x">X</button></div>
+            <div class="window-title">Edit Profile <button onclick="closeModal('profile-modal')" class="close-x">X</button></div>
             <div class="window-body">
                 <label>Display Name</label>
                 <input type="text" id="edit-display-name" class="aero-input">
-                <label>PFP URL</label>
+                <label>Avatar URL</label>
                 <input type="text" id="edit-pfp" class="aero-input">
                 <button onclick="saveProfile()" class="gel-button">Update System</button>
             </div>
         </div>
     </div>
-
+    
     <div id="friend-req-modal" class="modal-overlay" style="display:none;">
         <div class="bulky-window modal-content">
-            <div class="window-title">Add Connection <button onclick="closeModal('friend-req-modal')" class="close-x">X</button></div>
+            <div class="window-title">Add Friend <button onclick="closeModal('friend-req-modal')" class="close-x">X</button></div>
             <div class="window-body">
-                <p>Enter Target ID (Name#1234)</p>
                 <input type="text" id="friend-search-in" placeholder="Username#0000" class="aero-input">
                 <button onclick="sendFriendRequest()" class="gel-button">Send Request</button>
             </div>
