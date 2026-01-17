@@ -12,14 +12,25 @@ body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Segoe UI', Taho
 
 /* --- THE NEW CENTERED LOGIN SCREEN --- */
 .gatekeeper-overlay {
-    position: fixed; inset: 0; z-index: 10000;
-    display: flex; align-items: center; justify-content: center; /* PERFECT CENTERING */
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(25px); /* Frosty Glass Effect */
-    transition: opacity 0.5s ease;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
 }
 
-.auth-window { width: 380px; transform: scale(1.05); box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+.auth-window {
+    width: 400px;
+    padding-bottom: 20px; /* Space for the bottom buttons */
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
 
 .center-body { text-align: center; padding: 35px 25px; }
 
@@ -67,13 +78,20 @@ body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Segoe UI', Taho
 .aero-input:focus { border-color: #2196f3; background: white; }
 
 .gel-button {
-    width: 100%; padding: 12px; border: none; border-radius: 25px;
-    background: linear-gradient(to bottom, #4fc3f7 0%, #0288d1 100%);
-    color: white; font-weight: bold; cursor: pointer;
-    box-shadow: 0 4px 10px rgba(3, 169, 244, 0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-    transition: transform 0.1s;
+    background: linear-gradient(to bottom, #52b6ec 0%, #2989d8 50%, #1e70b1 100%);
+    border: 1px solid #1e5799;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .gel-button:active { transform: translateY(2px); }
+
+.gel-button:hover {
+    filter: brightness(1.1);
+}
 
 /* TABS */
 .window-tabs { padding: 10px; display: flex; gap: 8px; background: rgba(0,0,0,0.02); }
