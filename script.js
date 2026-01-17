@@ -5,9 +5,9 @@ const _supabase = supabase.createClient(SB_URL, SB_KEY);
 let currentUser = null;
 let activeChatID = null;
 let isSignupMode = false;
-let messageSubscription = null; // Holds the realtime listener
+let messageSubscription = null;
 
-// --- Sound Engine ---
+// --- Sound Engine (Synthesized Aero Pops) ---
 function playSound(type) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
@@ -17,8 +17,9 @@ function playSound(type) {
         osc.frequency.setValueAtTime(600, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
     } else {
-        osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.2);
+        // "Chime" sound for login
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
     }
     
     gain.gain.setValueAtTime(0.05, ctx.currentTime);
@@ -29,7 +30,7 @@ function playSound(type) {
     osc.stop(ctx.currentTime + 0.2);
 }
 
-// --- Initialization ---
+// --- App Startup ---
 window.onload = async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (session) {
@@ -46,14 +47,77 @@ function enterApp() {
     setTimeout(() => {
         gate.style.display = 'none';
         document.getElementById('app-root').style.display = 'grid';
-        setupRealtime(); // Start listening for messages immediately
+        setupRealtime(); 
         setView('dm');
     }, 500);
 }
 
-// --- Realtime Logic ---
+// --- Authentication Logic (Login/Signup Switch) ---
+function toggleAuthMode() {
+    playSound('pop');
+    isSignupMode = !isSignupMode;
+    
+    const authTitle = document.getElementById('auth-title');
+    const mainBtn = document.getElementById('main-auth-btn');
+    const toggleText = document.getElementById('toggle-text');
+    const signupFields = document.getElementById('signup-fields');
+    const authStatus = document.getElementById('auth-status');
+
+    if (isSignupMode) {
+        authTitle.textContent = "New Registration";
+        authStatus.textContent = "Create your digital identity.";
+        mainBtn.textContent = "Initialize Account";
+        toggleText.textContent = "Already have an account? Log In";
+        signupFields.style.display = "block";
+    } else {
+        authTitle.textContent = "System Access";
+        authStatus.textContent = "Identify yourself to connect.";
+        mainBtn.textContent = "Log In";
+        toggleText.textContent = "New user? Create Account";
+        signupFields.style.display = "none";
+    }
+}
+
+async function handleAuth() {
+    playSound('pop');
+    const email = document.getElementById('email-in').value;
+    const password = document.getElementById('pass-in').value;
+    
+    if (!email || !password) return alert("Credentials required.");
+
+    if (isSignupMode) {
+        // --- SIGNUP PROCESS ---
+        const username = document.getElementById('username-in').value;
+        if (!username) return alert("Please choose a username.");
+        
+        const { data, error } = await _supabase.auth.signUp({ email, password });
+        if (error) return alert(error.message);
+        
+        if (data.user) {
+            // Create Profile in Database immediately
+            await _supabase.from('profiles').insert([{
+                id: data.user.id,
+                username: username,
+                display_name: username,
+                id_tag: Math.floor(1000 + Math.random() * 9000),
+                pfp: `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
+            }]);
+            alert("Registration successful! Check your email for a link, then Log In.");
+            toggleAuthMode(); // Switch back to login view
+        }
+    } else {
+        // --- LOGIN PROCESS ---
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) return alert("Access Denied: " + error.message);
+        
+        currentUser = data.user;
+        await loadMyProfile();
+        enterApp();
+    }
+}
+
+// --- Realtime Messaging ---
 function setupRealtime() {
-    // If a subscription already exists, kill it first to avoid duplicates
     if (messageSubscription) _supabase.removeChannel(messageSubscription);
 
     messageSubscription = _supabase
@@ -63,15 +127,14 @@ function setupRealtime() {
             schema: 'public', 
             table: 'messages' 
         }, (payload) => {
-            // Only update the UI if the new message belongs to the current open chat
             if (payload.new.chat_id === activeChatID) {
-                appendSingleMessage(payload.new);
+                appendMsgUI(payload.new);
             }
         })
         .subscribe();
 }
 
-function appendSingleMessage(msg) {
+function appendMsgUI(msg) {
     const container = document.getElementById('chat-messages');
     const div = document.createElement('div');
     div.className = (msg.sender_id === currentUser.id) ? 'msg-bubble own' : 'msg-bubble';
@@ -80,60 +143,7 @@ function appendSingleMessage(msg) {
     container.scrollTop = container.scrollHeight;
 }
 
-// --- Auth Logic ---
-function toggleMode() {
-    isSignupMode = !isSignupMode;
-    const btn = document.getElementById('main-auth-btn');
-    const toggle = document.getElementById('toggle-text');
-    const signupSection = document.getElementById('signup-section');
-    
-    if (isSignupMode) {
-        btn.textContent = "Create Account";
-        toggle.textContent = "Already have an account? Log In";
-        signupSection.style.display = 'block';
-    } else {
-        btn.textContent = "Log In";
-        toggle.textContent = "New user? Create Account";
-        signupSection.style.display = 'none';
-    }
-}
-
-async function handleAuth() {
-    playSound('pop');
-    const email = document.getElementById('email-in').value;
-    const password = document.getElementById('pass-in').value;
-    
-    if (!email || !password) return alert("Please enter email and password.");
-
-    if (isSignupMode) {
-        const username = document.getElementById('username-in').value;
-        if (!username) return alert("Username is required.");
-        
-        const { data, error } = await _supabase.auth.signUp({ email, password });
-        if (error) return alert(error.message);
-        
-        if (data.user) {
-            await _supabase.from('profiles').insert([{
-                id: data.user.id,
-                username: username,
-                display_name: username,
-                id_tag: Math.floor(1000 + Math.random() * 9000),
-                pfp: `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`
-            }]);
-            alert("Account created! Please verify your email and then Log In.");
-            toggleMode();
-        }
-    } else {
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-        if (error) return alert("Login Failed: " + error.message);
-        
-        currentUser = data.user;
-        await loadMyProfile();
-        enterApp();
-    }
-}
-
-// --- Data & Messaging ---
+// --- Data & Sidebar ---
 async function loadMyProfile() {
     const { data } = await _supabase.from('profiles').select('*').eq('id', currentUser.id).single();
     if (data) {
@@ -149,8 +159,6 @@ async function sendMessage() {
     const txt = input.value.trim();
     if (!txt || !activeChatID) return;
 
-    // We don't need to manually add the bubble here anymore! 
-    // Realtime will detect the database insert and call appendSingleMessage for us.
     await _supabase.from('messages').insert([{
         sender_id: currentUser.id,
         content: txt,
@@ -165,20 +173,15 @@ async function loadMessages() {
     const { data } = await _supabase.from('messages').select('*').eq('chat_id', activeChatID).order('created_at', {ascending: true});
     const container = document.getElementById('chat-messages');
     container.innerHTML = '';
-    data?.forEach(m => appendSingleMessage(m));
+    data?.forEach(m => appendMsgUI(m));
 }
 
 function setView(type) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const activeTab = type === 'dm' ? 'tab-friends' : 'tab-groups';
-    document.getElementById(activeTab).classList.add('active');
+    const activeBtn = type === 'dm' ? 'tab-friends' : 'tab-groups';
+    document.getElementById(activeBtn).classList.add('active');
     
-    const container = document.getElementById('sidebar-content');
-    if (type === 'dm') {
-        loadFriends();
-    } else {
-        container.innerHTML = '<div style="padding:20px; text-align:center; opacity:0.6;">Groups coming soon...</div>';
-    }
+    if (type === 'dm') loadFriends();
 }
 
 async function loadFriends() {
@@ -189,7 +192,7 @@ async function loadFriends() {
     data?.forEach(f => {
         const div = document.createElement('div');
         div.className = 'user-tray'; 
-        div.style.cssText = 'padding:10px; cursor:pointer; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(0,0,0,0.05);';
+        div.style.cssText = 'padding:10px; cursor:pointer; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.2);';
         div.innerHTML = `<img src="${f.profiles.pfp}" style="width:35px;height:35px;border-radius:50%;"> <b>${f.profiles.display_name}</b>`;
         div.onclick = () => {
             activeChatID = f.id;
